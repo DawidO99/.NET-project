@@ -1,12 +1,15 @@
-using CarWorkshopManagementSystem.Data;
-using Microsoft.AspNetCore.Identity;
+﻿using CarWorkshopManagementSystem.Data;
+using CarWorkshopManagementSystem.Services;
+using CarWorkshopManagementSystem.Models; // <<------ DODAJ TEN IMPORT DLA AppUser
+using Microsoft.AspNetCore.Identity; // To już masz, OK
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection; // Dodaj ten import dla IServiceScope
 
 namespace CarWorkshopManagementSystem
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args) // <<------ ZMIEŃ NA async Task Main
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -16,16 +19,46 @@ namespace CarWorkshopManagementSystem
                 options.UseSqlServer(connectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-            builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            // ZMIANA TUTAJ: Używamy naszej własnej klasy AppUser i dodajemy obsługę ról
+            builder.Services.AddDefaultIdentity<AppUser>(options => options.SignIn.RequireConfirmedAccount = true) // <<------ ZMIEŃ IdentityUser NA AppUser
+                .AddRoles<IdentityRole>() // <<------ DODAJ TĄ LINIĘ, ABY WŁĄCZYĆ OBSŁUGĘ RÓL
                 .AddEntityFrameworkStores<ApplicationDbContext>();
+
             builder.Services.AddControllersWithViews();
 
+            // Dodaj Swagger/OpenAPI (dla dokumentacji API, przydatne w development)
+            builder.Services.AddEndpointsApiExplorer(); // <<------ DODAJ TĄ LINIĘ
+            builder.Services.AddSwaggerGen(); // <<------ DODAJ TĄ LINIĘ
+
+            // Rejestracja serwisów biznesowych
+            builder.Services.AddScoped<ICustomerService, CustomerService>(); // To już masz, OK
+
             var app = builder.Build();
+
+            // **********************************************
+            // DODANIE SEEDINGU RÓL I UŻYTKOWNIKA ADMINA
+            // Ten blok kodu powinien być ZARAZ PO app.Build(), a przed Configure the HTTP request pipeline.
+            using (var scope = app.Services.CreateScope())
+            {
+                var serviceProvider = scope.ServiceProvider;
+                try
+                {
+                    await DataSeeder.SeedRolesAndAdminUser(serviceProvider);
+                }
+                catch (Exception ex)
+                {
+                    var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
+                    logger.LogError(ex, "An error occurred while seeding the database.");
+                }
+            }
+            // **********************************************
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
                 app.UseMigrationsEndPoint();
+                app.UseSwagger(); 
+                app.UseSwaggerUI(); 
             }
             else
             {

@@ -1,0 +1,30 @@
+﻿@using CarWorkshopManagementSystem.Models // WAŻNE: upewnij się, że to jest Twój namespace
+@model List<Customer>
+
+<h2>Lista klientów</h2>
+
+<p>
+    <a asp-controller="Customer" asp-action="Create" class="btn btn-primary">Dodaj klienta</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Imię i nazwisko</th>
+            <th>Telefon</th>
+            <th>Akcje</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var customer in Model)
+        {
+            <tr>
+                <td>@customer.FullName</td>
+                <td>@customer.PhoneNumber</td>
+                <td>
+                    <a asp-controller="Customer" asp-action="Details" asp-route-id="@customer.Id" class="btn btn-sm btn-info">Szczegóły</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

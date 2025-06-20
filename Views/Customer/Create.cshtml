@@ -1,0 +1,27 @@
+﻿@using CarWorkshopManagementSystem.Models // WAŻNE: upewnij się, że to jest Twój namespace
+@model Customer
+
+<h2>Dodaj nowego klienta</h2>
+
+<form asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="form-group">
+        <label asp-for="FullName">Imię i nazwisko</label>
+        <input asp-for="FullName" class="form-control" />
+        <span asp-validation-for="FullName" class="text-danger"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="PhoneNumber">Telefon</label>
+        <input asp-for="PhoneNumber" class="form-control" />
+        <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+    </div>
+    <button type="submit" class="btn btn-success mt-3">Zapisz</button>
+    <a asp-action="Index" class="btn btn-secondary mt-3">Anuluj</a>
+</form>
+
+@section Scripts {
+    @{
+        // To jest potrzebne do włączenia walidacji po stronie klienta (JavaScript)
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
