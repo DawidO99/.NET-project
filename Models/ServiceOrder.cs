@@ -1,16 +1,21 @@
 ﻿// Models/ServiceOrder.cs
-using System.Collections.Generic; // Potrzebne dla ICollection
-using System; // Potrzebne dla DateTime
+using System.Collections.Generic;
+using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace CarWorkshopManagementSystem.Models
 {
-    // Na razie minimalna definicja
     public class ServiceOrder
     {
         public int Id { get; set; }
-        public string Status { get; set; } = "New"; // Domyślny status
+
+        [Required(ErrorMessage = "Status jest wymagany.")]
+        public string Status { get; set; } = "Nowe";
+
+        [Required(ErrorMessage = "Opis problemu jest wymagany.")]
         public string Description { get; set; } = string.Empty;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        public DateTime CreationDate { get; set; } = DateTime.Now; // Nazwa jest 'CreationDate'
 
         public string? AssignedMechanicId { get; set; }
         public AppUser? AssignedMechanic { get; set; }

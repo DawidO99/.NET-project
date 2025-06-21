@@ -1,4 +1,5 @@
 ﻿@model CarWorkshopManagementSystem.Models.Vehicle
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 
 @{
     ViewData["Title"] = "Dodaj Pojazd";
@@ -14,6 +15,7 @@
 
             <div class="form-group mb-3">
                 <label asp-for="CustomerId" class="control-label">Właściciel</label>
+                @* SelectList przekazany z kontrolera będzie już zawierał wybraną wartość, jeśli model.CustomerId jest ustawione *@
                 <select asp-for="CustomerId" class="form-control" asp-items="ViewBag.Customers">
                     <option value="">-- Wybierz klienta --</option>
                 </select>
@@ -49,6 +51,13 @@
                 <input asp-for="Year" class="form-control" />
                 <span asp-validation-for="Year" class="text-danger"></span>
             </div>
+
+            @* Pole dla ImageUrl będzie dodane później przy funkcjonalności uploadu plików *@
+            @* <div class="form-group mb-3">
+                <label asp-for="ImageUrl" class="control-label">URL Zdjęcia</label>
+                <input asp-for="ImageUrl" class="form-control" />
+                <span asp-validation-for="ImageUrl" class="text-danger"></span>
+            </div> *@
 
             <div class="form-group">
                 <input type="submit" value="Dodaj" class="btn btn-primary" />

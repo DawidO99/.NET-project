@@ -1,6 +1,8 @@
 ﻿// Models/Vehicle.cs
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema; // Dodaj ten using dla [ForeignKey]
+using Microsoft.AspNetCore.Mvc.ModelBinding.Validation; // Wymagane dla [ValidateNever]
 
 namespace CarWorkshopManagementSystem.Models
 {
@@ -29,9 +31,16 @@ namespace CarWorkshopManagementSystem.Models
 
         public string? ImageUrl { get; set; } // Opcjonalny obrazek pojazdu
 
+        // Relacja do Klienta (właściciela)
+        // CustomerId jest polem, które jest wiązane z formularza
+        [Required(ErrorMessage = "Właściciel jest wymagany.")] // Dodaj to, jeśli nie było i chcesz, aby pole było wymagane
         public int CustomerId { get; set; } // Klucz obcy do klienta
-        public Customer Customer { get; set; } = null!; // Właściwość nawigacyjna
 
-        public ICollection<ServiceOrder> Orders { get; set; } = new List<ServiceOrder>(); // Zlecenia serwisowe dla tego pojazdu
+        [ForeignKey("CustomerId")] // Explicitne określenie klucza obcego
+        [ValidateNever] // <-- KLUCZOWA ZMIANA: Ignoruje walidację tej właściwości nawigacyjnej
+        public Customer Customer { get; set; } = null!; // Właściwość nawigacyjna. "null!" wskazuje, że kompilator ma założyć, że nigdy nie będzie null.
+
+        // Zlecenia serwisowe dla tego pojazdu
+        public ICollection<ServiceOrder> Orders { get; set; } = new List<ServiceOrder>();
     }
 }

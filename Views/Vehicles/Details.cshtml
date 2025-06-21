@@ -1,0 +1,123 @@
+﻿@model CarWorkshopManagementSystem.Models.Vehicle
+@using System.Linq // Dodaj ten using dla .Any()
+
+@{
+    ViewData["Title"] = "Szczegóły Pojazdu: " + Model.RegistrationNumber;
+}
+
+<h1>Szczegóły Pojazdu</h1>
+
+<div>
+    <h4>Pojazd</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Brand)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Brand)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Model)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Model)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.VIN)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.VIN)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.RegistrationNumber)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.RegistrationNumber)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Year)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Year)
+        </dd>
+        <dt class="col-sm-2">
+            Właściciel
+        </dt>
+        <dd class="col-sm-10">
+            @if (Model.Customer != null)
+            {
+                <a asp-controller="Customer" asp-action="Details" asp-route-id="@Model.Customer.Id">@Model.Customer.FullName</a>
+            }
+            else
+            {
+                <span>Brak przypisanego właściciela</span>
+            }
+        </dd>
+        @if (!string.IsNullOrEmpty(Model.ImageUrl))
+        {
+            <dt class="col-sm-2">
+                Zdjęcie
+            </dt>
+            <dd class="col-sm-10">
+                <img src="~/uploads/@Model.ImageUrl" alt="Zdjęcie pojazdu" style="max-width: 300px; height: auto;" />
+            </dd>
+        }
+    </dl>
+</div>
+
+<h3>Zlecenia Serwisowe dla tego Pojazdu</h3>
+<hr />
+@if (Model.Orders != null && Model.Orders.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Opis Problemu</th>
+                <th>Status</th>
+                <th>Data Utworzenia</th>
+                <th>Mechanik</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model.Orders)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => order.Description)</td>
+                    <td>@Html.DisplayFor(modelItem => order.Status)</td>
+                    <td>@Html.DisplayFor(modelItem => order.CreationDate)</td> @* Używa CreationDate *@
+                    <td>
+                        @if (order.AssignedMechanic != null)
+                        {
+                            @Html.DisplayFor(modelItem => order.AssignedMechanic.UserName)
+                        }
+                        else
+                        {
+                            <span>Brak</span>
+                        }
+                    </td>
+                    <td>
+                        <a asp-controller="ServiceOrders" asp-action="Details" asp-route-id="@order.Id">Szczegóły Zlecenia</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Dla tego pojazdu nie ma jeszcze żadnych zleceń serwisowych.</p>
+}
+
+<div class="mt-3">
+    <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn btn-primary">Edytuj Pojazd</a> |
+    <a asp-controller="ServiceOrders" asp-action="Create" asp-route-vehicleId="@Model?.Id" class="btn btn-secondary">Dodaj Zlecenie dla tego Pojazdu</a> |
+    <a asp-action="Index" class="btn btn-info">Powrót do listy Pojazdów</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
