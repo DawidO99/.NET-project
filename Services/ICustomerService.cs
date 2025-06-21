@@ -7,7 +7,7 @@ namespace CarWorkshopManagementSystem.Services
     public interface ICustomerService
     {
         Task<List<Customer>> GetAllAsync();
-        Task<Customer?> GetByIdAsync(int id);
+        Task<Customer?> GetByIdAsync(int id); // Dodana metoda GetByIdAsync
         Task AddAsync(Customer customer);
     }
 }

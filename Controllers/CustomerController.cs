@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using CarWorkshopManagementSystem.Models;
-using CarWorkshopManagementSystem.Services;
+using System.Collections.Generic; // To już masz
+using CarWorkshopManagementSystem.Models; // To już masz
+using CarWorkshopManagementSystem.Services; // To już masz
 
 namespace CarWorkshopManagementSystem.Controllers
 {
@@ -21,6 +21,18 @@ namespace CarWorkshopManagementSystem.Controllers
             var customers = await _service.GetAllAsync();
             return View(customers);
         }
+
+        // GET: /Customer/Details/{id}
+        public async Task<IActionResult> Details(int id) // <--- DODANA AKCJA DETAILS
+        {
+            var customer = await _service.GetByIdAsync(id);
+            if (customer == null)
+            {
+                return NotFound(); // Zwróć 404 Not Found, jeśli klienta o danym ID nie ma
+            }
+            return View(customer);
+        }
+
 
         // GET: /Customer/Create
         public IActionResult Create()

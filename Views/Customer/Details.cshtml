@@ -1,0 +1,71 @@
+﻿@model CarWorkshopManagementSystem.Models.Customer
+
+@{
+    ViewData["Title"] = "Szczegóły Klienta: " + Model.FullName;
+}
+
+<h1>Szczegóły Klienta</h1>
+
+<div>
+    <h4>Klient</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.FullName)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.FullName)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.PhoneNumber)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.PhoneNumber)
+        </dd>
+    </dl>
+</div>
+
+<h3>Pojazdy Klienta</h3>
+<hr />
+@if (Model.Vehicles != null && Model.Vehicles.Any())
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Marka</th>
+                <th>Model</th>
+                <th>Nr rejestracyjny</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var vehicle in Model.Vehicles)
+            {
+                <tr>
+                    <td>@Html.DisplayFor(modelItem => vehicle.Brand)</td>
+                    <td>@Html.DisplayFor(modelItem => vehicle.Model)</td>
+                    <td>@Html.DisplayFor(modelItem => vehicle.RegistrationNumber)</td>
+                    <td>
+                        <a asp-controller="Vehicles" asp-action="Details" asp-route-id="@vehicle.Id">Szczegóły Pojazdu</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Ten klient nie posiada jeszcze żadnych pojazdów.</p>
+}
+
+<div class="mt-3">
+    <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn btn-primary">Edytuj Klienta</a> |
+    <a asp-controller="Vehicles" asp-action="Create" asp-route-customerId="@Model?.Id" class="btn btn-secondary">Dodaj Pojazd dla tego Klienta</a> |
+    <a asp-action="Index" class="btn btn-info">Powrót do listy Klientów</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

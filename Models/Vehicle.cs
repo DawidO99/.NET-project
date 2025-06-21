@@ -27,11 +27,11 @@ namespace CarWorkshopManagementSystem.Models
         [Range(1900, 2100, ErrorMessage = "Rok musi być w zakresie 1900-2100.")]
         public int Year { get; set; }
 
-        public string? ImageUrl { get; set; }
+        public string? ImageUrl { get; set; } // Opcjonalny obrazek pojazdu
 
-        public int CustomerId { get; set; }
-        public Customer Customer { get; set; } = null!; // Upewnij się, że jest null!
+        public int CustomerId { get; set; } // Klucz obcy do klienta
+        public Customer Customer { get; set; } = null!; // Właściwość nawigacyjna
 
-        public ICollection<ServiceOrder> Orders { get; set; } = new List<ServiceOrder>();
+        public ICollection<ServiceOrder> Orders { get; set; } = new List<ServiceOrder>(); // Zlecenia serwisowe dla tego pojazdu
     }
 }
