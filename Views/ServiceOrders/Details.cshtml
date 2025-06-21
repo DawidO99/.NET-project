@@ -49,6 +49,7 @@
                     <th>Opis</th>
                     <th>Koszt robocizny</th>
                     <th>Użyte części</th>
+                    <th></th> @* Kolumna na akcje, np. edycja czynności *@
                 </tr>
             </thead>
             <tbody>
@@ -58,7 +59,7 @@
                         <td>@task.Description</td>
                         <td>@task.LaborCost.ToString("C")</td>
                         <td>
-                            @if (task.UsedParts.Any())
+                            @if (task.UsedParts != null && task.UsedParts.Any())
                             {
                                 <ul>
                                     @foreach (var usedPart in task.UsedParts)
@@ -72,6 +73,10 @@
                                 <small class="text-muted">Brak części</small>
                             }
                         </td>
+                        <td>
+                            @* Tutaj można dodać linki do edycji/usuwania konkretnej czynności, np.: *@
+                            @* <a asp-controller="ServiceTasks" asp-action="Edit" asp-route-id="@task.Id">Edytuj</a> *@
+                        </td>
                     </tr>
                 }
             </tbody>
@@ -84,22 +89,55 @@
         </div>
         <div class="card-body">
             <form asp-controller="ServiceTasks" asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div> @* Wyświetla błędy walidacji *@
                 <input type="hidden" name="ServiceOrderId" value="@Model.Id" />
                 <div class="row">
-                    <div class="col-md-8">
-                        <div class="form-group">
-                            <label for="Description">Opis czynności</label>
+                    <div class="col-md-6">
+                        <div class="form-group mb-2">
+                            <label for="Description" class="form-label">Opis czynności</label>
                             <input name="Description" class="form-control" />
+                            @* Dodaj span asp-validation-for="Description" jeśli masz walidację na modelu ServiceTask *@
                         </div>
                     </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="LaborCost">Koszt robocizny</label>
+                    <div class="col-md-6">
+                        <div class="form-group mb-2">
+                            <label for="LaborCost" class="form-label">Koszt robocizny</label>
                             <input name="LaborCost" type="number" step="0.01" class="form-control" />
+                            @* Dodaj span asp-validation-for="LaborCost" *@
                         </div>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-primary mt-2">Dodaj czynność</button>
+
+                <h5>Użyte części (opcjonalnie)</h5>
+                <div id="usedPartsContainer">
+                    @* Tutaj dynamicznie dodawane będą pola dla części *@
+                    <div class="row mb-2 part-row" data-part-index="0">
+                        <div class="col-md-7">
+                            <label for="Part0" class="form-label">Wybierz część</label>
+                            <select name="selectedPartIds[0]" class="form-select part-select" data-index="0">
+                                <option value="">-- Wybierz część --</option>
+                                @if (ViewBag.Parts != null)
+                                {
+                                    // TA PĘTLA JEST POPRAWNA
+                                    @foreach (var item in (List<SelectListItem>)ViewBag.Parts)
+                                    {
+                                        <option value="@item.Value">@item.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="Quantity0" class="form-label">Ilość</label>
+                            <input name="quantities[0]" type="number" min="1" value="1" class="form-control quantity-input" data-index="0" />
+                        </div>
+                        <div class="col-md-1 d-flex align-items-end">
+                            <button type="button" class="btn btn-danger remove-part-row" style="width: 100%;">X</button>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary btn-sm mt-2" id="addPartButton">Dodaj kolejną część</button>
+
+                <button type="submit" class="btn btn-primary mt-3">Dodaj czynność</button>
             </form>
         </div>
     </div>
@@ -107,7 +145,7 @@
     <hr />
 
     <h4>Komentarze</h4>
-    @if (Model.Comments.Any())
+    @if (Model.Comments != null && Model.Comments.Any())
     {
         @foreach (var comment in Model.Comments.OrderByDescending(c => c.CreatedAt))
         {
@@ -130,9 +168,11 @@
         </div>
         <div class="card-body">
             <form asp-controller="Comments" asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div> @* Wyświetla błędy walidacji *@
                 <input type="hidden" name="OrderId" value="@Model.Id" />
-                <div class="form-group">
+                <div class="form-group mb-2">
                     <textarea name="Content" class="form-control" rows="3" placeholder="Wpisz swój komentarz..."></textarea>
+                    @* Dodaj span asp-validation-for="Content" *@
                 </div>
                 <button type="submit" class="btn btn-info mt-2">Dodaj komentarz</button>
             </form>
@@ -148,4 +188,62 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            let partIndex = document.querySelectorAll('.part-row').length; // Start with existing rows count
+
+            document.getElementById('addPartButton').addEventListener('click', function () {
+                const container = document.getElementById('usedPartsContainer');
+                const newPartRow = document.createElement('div');
+                newPartRow.classList.add('row', 'mb-2', 'part-row');
+                newPartRow.setAttribute('data-part-index', partIndex);
+
+                // ZMIENIONA SEKCJA: Poprawne renderowanie opcji SelectListItem
+                let partOptionsHtml = '<option value="">-- Wybierz część --</option>';
+        @if (ViewBag.Parts != null)
+        {
+            // MUSISZ SKONSTRUOWAĆ TEN CIĄG HTML W BLOKU RAZOR, ABY JAVASCRIPT MÓGŁ GO UŻYĆ
+            // Wczesniej było @foreach (var part in ViewBag.Parts), co powodowało błąd
+            // Teraz rzutujemy ViewBag.Parts na List<SelectListItem> i używamy item.Value i item.Text
+            foreach (var item in (List<SelectListItem>)ViewBag.Parts)
+            {
+                @:partOptionsHtml += `<option value="@item.Value">@Html.Raw(item.Text.Replace("`", "\\`"))</option>`; // Użyj Html.Raw i zabezpiecz backticki dla JS
+            }
+        }
+
+                newPartRow.innerHTML = `
+                    <div class="col-md-7">
+                        <label for="Part${partIndex}" class="form-label">Wybierz część</label>
+                        <select name="selectedPartIds[${partIndex}]" class="form-select part-select" data-index="${partIndex}">
+                            ${partOptionsHtml}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="Quantity${partIndex}" class="form-label">Ilość</label>
+                        <input name="quantities[${partIndex}]" type="number" min="1" value="1" class="form-control quantity-input" data-index="${partIndex}" />
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger remove-part-row" style="width: 100%;">X</button>
+                    </div>
+                `;
+                container.appendChild(newPartRow);
+                partIndex++;
+            });
+
+            // Handle removing part rows
+            document.getElementById('usedPartsContainer').addEventListener('click', function (e) {
+                if (e.target.classList.contains('remove-part-row')) {
+                    if (document.querySelectorAll('.part-row').length > 1) { // Nie usuwaj ostatniego wiersza
+                        e.target.closest('.part-row').remove();
+                    } else {
+                        // Jeśli jest tylko jeden wiersz, zamiast usuwać, wyczyść pola
+                        const currentRow = e.target.closest('.part-row');
+                        currentRow.querySelector('.part-select').value = "";
+                        currentRow.querySelector('.quantity-input').value = "1";
+                    }
+                }
+            });
+        });
+    </script>
 }
