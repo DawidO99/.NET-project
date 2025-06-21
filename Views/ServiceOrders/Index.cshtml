@@ -1,5 +1,5 @@
 ﻿@model IEnumerable<CarWorkshopManagementSystem.Models.ServiceOrder>
-
+@using CarWorkshopManagementSystem.Extensions // <-- DODAJ TĘ LINIĘ
 @{
     ViewData["Title"] = "Zlecenia serwisowe";
 }
@@ -24,16 +24,16 @@
     <tbody>
         @foreach (var item in Model)
         {
-            <tr>
-                <td>@item.Vehicle.Brand @item.Vehicle.Model</td>
-                <td>@item.Vehicle.Customer.FullName</td>
-                <td>@Html.DisplayFor(modelItem => item.Description)</td>
-                <td>@Html.DisplayFor(modelItem => item.Status)</td>
-                <td>@item.AssignedMechanic?.UserName</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
-                </td>
-            </tr>
+                <tr>
+                    <td>@item.Vehicle.Brand @item.Vehicle.Model</td>
+                    <td>@item.Vehicle.Customer.FullName</td>
+                    <td>@Html.DisplayFor(modelItem => item.Description)</td>
+                    <td>@item.Status.GetDisplayName()</td> @* <-- ZMIENIONA LINIA *@
+                    <td>@item.AssignedMechanic?.UserName</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
+                    </td>
+                </tr>
         }
     </tbody>
 </table>

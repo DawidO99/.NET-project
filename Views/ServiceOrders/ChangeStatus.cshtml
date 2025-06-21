@@ -1,0 +1,82 @@
+﻿@model CarWorkshopManagementSystem.Models.ServiceOrder
+@using CarWorkshopManagementSystem.Extensions
+@using CarWorkshopManagementSystem.Models
+@using Microsoft.AspNetCore.Mvc.Rendering // Dodaj to using dla SelectListItem
+
+@{
+    ViewData["Title"] = "Zmień Status Zlecenia";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<h4>Zlecenie #@Model.Id</h4>
+<hr />
+
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="ChangeStatus" asp-route-id="@Model.Id" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+            <dl class="row">
+                <dt class="col-sm-4">
+                    Pojazd:
+                </dt>
+                <dd class="col-sm-8">
+                    @Html.DisplayFor(model => model.Vehicle.Brand) @Html.DisplayFor(model => model.Vehicle.Model) (@Html.DisplayFor(model => model.Vehicle.RegistrationNumber))
+                </dd>
+                <dt class="col-sm-4">
+                    Opis problemu:
+                </dt>
+                <dd class="col-sm-8">
+                    @Html.DisplayFor(model => model.Description)
+                </dd>
+                <dt class="col-sm-4">
+                    Data utworzenia:
+                </dt>
+                <dd class="col-sm-8">
+                    @Html.DisplayFor(model => model.CreationDate)
+                </dd>
+                <dt class="col-sm-4">
+                    Przypisany mechanik:
+                </dt>
+                <dd class="col-sm-8">
+                    @(Model.AssignedMechanic?.UserName ?? "Nieprzypisany")
+                </dd>
+                <dt class="col-sm-4">
+                    Aktualny status:
+                </dt>
+                <dd class="col-sm-8">
+                    @((ServiceOrderStatus)ViewBag.CurrentStatus).GetDisplayName()
+                </dd>
+                @if (Model.CompletionDate.HasValue)
+                {
+                    <dt class="col-sm-4">
+                        Data zakończenia:
+                    </dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.CompletionDate)
+                    </dd>
+                }
+            </dl>
+
+            <div class="form-group mb-3">
+                <label for="newStatus" class="control-label">Nowy Status</label>
+                <select asp-for="Status" asp-items="@ViewBag.Statuses" class="form-control" id="newStatus">
+                    <option value="">-- Wybierz nowy status --</option>
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <input type="submit" value="Zmień Status" class="btn btn-primary" />
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Anuluj</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

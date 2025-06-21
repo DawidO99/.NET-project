@@ -1,0 +1,200 @@
+﻿@model CarWorkshopManagementSystem.Models.ServiceTask
+@using CarWorkshopManagementSystem.Extensions // Do użycia GetDisplayName()
+@using CarWorkshopManagementSystem.Models
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using System.Linq
+
+@{
+    ViewData["Title"] = "Edytuj Zadanie";
+}
+
+<h1>Edytuj Zadanie</h1>
+
+<h4>Zadanie #@Model.Id</h4>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        @* Zwiększyłem szerokość kolumny dla lepszej widoczności formularza *@
+        <form asp-action="EditTask" asp-route-id="@Model.Id" method="post">
+            <div asp-validation-summary="All" class="text-danger"></div> @* Zmienione na "All" dla łatwiejszego debugowania *@
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="ServiceOrderId" /> @* Przekazujemy ServiceOrderId, aby po edycji wrócić do szczegółów właściwego zlecenia *@
+
+            <div class="form-group mb-3">
+                @* Dodano mb-3 dla marginesu *@
+                <label asp-for="Description" class="control-label"></label>
+                <input asp-for="Description" class="form-control" />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                @* Dodano mb-3 dla marginesu *@
+                <label asp-for="LaborCost" class="control-label"></label>
+                <input asp-for="LaborCost" class="form-control" />
+                <span asp-validation-for="LaborCost" class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                @* Dodano mb-3 dla marginesu *@
+                <label asp-for="Status" class="control-label"></label>
+                <select asp-for="Status" class="form-control" asp-items="Html.GetEnumSelectList<CarWorkshopManagementSystem.Models.ServiceTaskStatus>()">
+                    <option value="">-- Wybierz status --</option> @* Dodano pustą opcję *@
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+
+            <h4 class="mt-4">Użyte Części</h4>
+            <div id="usedPartsContainer" class="mb-3">
+                @if (Model.UsedParts != null)
+                {
+                    @for (int i = 0; i < Model.UsedParts.Count; i++)
+                    {
+                        var usedPart = Model.UsedParts.ElementAt(i);
+                        <div class="row mb-2 part-row" data-part-index="@i">
+                            @* Te hidden fieldy nie są już potrzebne, bo kontroler usuwa i dodaje na nowo UsedParts.
+                                Mogą być, ale są zbędne w tej logice. Możesz je usunąć dla czystości.
+                                input type="hidden" name="UsedParts[@i].Id" value="@usedPart.Id"
+                                input type="hidden" name="UsedParts[@i].ServiceTaskId" value="@usedPart.ServiceTaskId" *@
+
+                            <div class="col-md-7">
+                                <label for="selectedPartIds_@i" class="form-label">Wybierz część</label>
+                                <select name="selectedPartIds[@i]" class="form-select part-select" id="selectedPartIds_@i">
+                                    <option value="">-- Wybierz część --</option>
+                                    @* Zmieniona logika, aby obsługiwać anonimowe obiekty z kontrolera *@
+                                    @if (ViewBag.Parts is IEnumerable<dynamic> partItems) // Używamy dynamic, bo to anonimowe typy
+                                    {
+                                        foreach (var item in partItems)
+                                        {
+                                            // Porównujemy int z int, a nie string ze stringiem
+                                            <option value="@item.Id" selected="@(item.Id == usedPart.PartId)">@($"{item.Name} ({item.UnitPrice:C})")</option>
+                                        }
+                                    }
+                                </select>
+                                <span class="text-danger" data-valmsg-for="selectedPartIds[@i]" data-valmsg-replace="true"></span>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="quantities_@i" class="form-label">Ilość</label>
+                                <input name="quantities[@i]" type="number" min="1" value="@usedPart.Quantity" class="form-control quantity-input" id="quantities_@i" />
+                                <span class="text-danger" data-valmsg-for="quantities[@i]" data-valmsg-replace="true"></span>
+                            </div>
+                            <div class="col-md-1 d-flex align-items-end">
+                                <button type="button" class="btn btn-danger remove-part-row" style="width: 100%;">X</button>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+            <button type="button" id="addPartButton" class="btn btn-secondary mb-3">Dodaj kolejną część</button>
+
+            <div class="form-group mt-3">
+                <input type="submit" value="Zapisz" class="btn btn-primary" />
+                <a asp-action="Details" asp-route-id="@ViewBag.ServiceOrderId" class="btn btn-secondary">Anuluj</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Przekaż dane części z ViewBag do JavaScriptu jako JSON
+            // WAŻNE: W KONTROLERZE MUSISZ PRZEKAZYWAĆ LISTĘ OBIEKTÓW PART (lub anonimowych typów)
+            const partData = @Html.Raw(Json.Serialize(ViewBag.Parts)); // Oczekujemy listy anonimowych obiektów { Id, Name, UnitPrice }
+
+            // Zaczynamy indeksowanie od liczby istniejących już części
+            let partIndex = document.querySelectorAll('.part-row').length;
+
+            // Funkcja do dodawania nowego wiersza części
+            function addPartRow() {
+                const container = document.getElementById('usedPartsContainer');
+                const newPartRow = document.createElement('div');
+                newPartRow.classList.add('row', 'mb-2', 'part-row');
+                newPartRow.setAttribute('data-part-index', partIndex);
+
+                let partOptionsHtml = '<option value="">-- Wybierz część --</option>';
+                partData.forEach(function(part) { // part to teraz obiekt {id, name, unitPrice}
+                    partOptionsHtml += `<option value="${part.id}">${escapeHtml(part.name)} (${part.unitPrice.toFixed(2)} zł)</option>`;
+                });
+
+                newPartRow.innerHTML = `
+                    <div class="col-md-7">
+                        <label for="selectedPartIds_${partIndex}" class="form-label">Wybierz część</label>
+                        <select name="selectedPartIds[${partIndex}]" class="form-select part-select" id="selectedPartIds_${partIndex}">
+                            ${partOptionsHtml}
+                        </select>
+                        <span class="text-danger" data-valmsg-for="selectedPartIds[${partIndex}]" data-valmsg-replace="true"></span>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="quantities_${partIndex}" class="form-label">Ilość</label>
+                        <input name="quantities[${partIndex}]" type="number" min="1" value="1" class="form-control quantity-input" id="quantities_${partIndex}" />
+                        <span class="text-danger" data-valmsg-for="quantities[${partIndex}]" data-valmsg-replace="true"></span>
+                    </div>
+                    <div class="col-md-1 d-flex align-items-end">
+                        <button type="button" class="btn btn-danger remove-part-row" style="width: 100%;">X</button>
+                    </div>
+                `;
+                container.appendChild(newPartRow);
+                partIndex++;
+
+                // Ponowna inicjalizacja walidacji dla nowo dodanych pól
+                $.validator.unobtrusive.parse(newPartRow);
+            }
+
+            // Obsługa przycisku "Dodaj kolejną część"
+            document.getElementById('addPartButton').addEventListener('click', addPartRow);
+
+            // Obsługa usuwania wierszy części (zarówno początkowych, jak i dynamicznie dodanych)
+            document.getElementById('usedPartsContainer').addEventListener('click', function (e) {
+                if (e.target.classList.contains('remove-part-row')) {
+                    const rowToRemove = e.target.closest('.part-row');
+                    rowToRemove.remove();
+
+                    // Po usunięciu, zaktualizuj indeksy, aby były ciągłe
+                    document.querySelectorAll('.part-row').forEach((row, idx) => {
+                        row.setAttribute('data-part-index', idx);
+                        // Aktualizuj atrybuty name i id
+                        row.querySelector('.part-select').name = `selectedPartIds[${idx}]`;
+                        row.querySelector('.part-select').id = `selectedPartIds_${idx}`;
+
+                        row.querySelector('.quantity-input').name = `quantities[${idx}]`;
+                        row.querySelector('.quantity-input').id = `quantities_${idx}`;
+
+                        // Zaktualizuj atrybuty data-valmsg-for dla spanów walidacji
+                        const partSelectValidationSpan = row.querySelector(`span[data-valmsg-for^="selectedPartIds["]`);
+                        if (partSelectValidationSpan) {
+                            partSelectValidationSpan.setAttribute('data-valmsg-for', `selectedPartIds[${idx}]`);
+                        }
+                        const quantityInputValidationSpan = row.querySelector(`span[data-valmsg-for^="quantities["]`);
+                        if (quantityInputValidationSpan) {
+                            quantityInputValidationSpan.setAttribute('data-valmsg-for', `quantities[${idx}]`);
+                        }
+                        // Jeśli używasz ukrytych pól dla istniejących UsedParts, musisz je również zaktualizować:
+                        // const hiddenPartId = row.querySelector(`input[name^="UsedParts["]`);
+                        // if (hiddenPartId) {
+                        //     hiddenPartId.name = `UsedParts[${idx}].Id`;
+                        // }
+                        // const hiddenServiceTaskId = row.querySelector(`input[name$=".ServiceTaskId"]`);
+                        // if (hiddenServiceTaskId) {
+                        //     hiddenServiceTaskId.name = `UsedParts[${idx}].ServiceTaskId`;
+                        // }
+                    });
+                    partIndex = document.querySelectorAll('.part-row').length; // Zaktualizuj partIndex po reindeksacji
+                }
+            });
+
+            // Funkcja do bezpiecznego encodowania tekstu HTML
+            function escapeHtml(text) {
+                var map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#039;'
+                };
+                return text.replace(/[&<>"']/g, function(m) { return map[m]; });
+            }
+        });
+    </script>
+}

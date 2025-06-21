@@ -17,5 +17,7 @@ namespace CarWorkshopManagementSystem.Models
 
         public int OrderId { get; set; }
         public ServiceOrder Order { get; set; } = null!;
+
+        //public DateTime CommentDate { get; set; }
     }
 }
