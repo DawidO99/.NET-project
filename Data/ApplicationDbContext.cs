@@ -1,17 +1,12 @@
-﻿// Data/ApplicationDbContext.cs
-using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using CarWorkshopManagementSystem.Models; // Upewnij się, że to jest!
+using CarWorkshopManagementSystem.Models;
 
 namespace CarWorkshopManagementSystem.Data
 {
-    // WAŻNE: Zmień IdentityDbContext na IdentityDbContext<AppUser>
     public class ApplicationDbContext : IdentityDbContext<AppUser>
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options) { }
-
-        // Dodaj DbSet dla wszystkich Twoich encji
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
         public DbSet<Customer> Customers { get; set; } = null!;
         public DbSet<Vehicle> Vehicles { get; set; } = null!;
         public DbSet<ServiceOrder> ServiceOrders { get; set; } = null!;

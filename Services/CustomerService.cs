@@ -1,8 +1,7 @@
-﻿// Services/CustomerService.cs
-using System.Collections.Generic;
-using System.Linq; // Potrzebne dla .ToListAsync() i .FirstOrDefaultAsync()
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore; // <<------ BARDZO WAŻNE! Ten import był powodem poprzednich błędów CS1061
+using Microsoft.EntityFrameworkCore;
 using CarWorkshopManagementSystem.Data;
 using CarWorkshopManagementSystem.Models;
 

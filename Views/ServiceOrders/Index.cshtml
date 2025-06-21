@@ -1,0 +1,39 @@
+﻿@model IEnumerable<CarWorkshopManagementSystem.Models.ServiceOrder>
+
+@{
+    ViewData["Title"] = "Zlecenia serwisowe";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Dodaj nowe zlecenie</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Pojazd</th>
+            <th>Klient</th>
+            <th>Opis problemu</th>
+            <th>Status</th>
+            <th>Mechanik</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Vehicle.Brand @item.Vehicle.Model</td>
+                <td>@item.Vehicle.Customer.FullName</td>
+                <td>@Html.DisplayFor(modelItem => item.Description)</td>
+                <td>@Html.DisplayFor(modelItem => item.Status)</td>
+                <td>@item.AssignedMechanic?.UserName</td>
+                <td>
+                    <a asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

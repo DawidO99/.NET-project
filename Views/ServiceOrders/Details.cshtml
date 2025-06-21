@@ -1,0 +1,151 @@
+﻿@model CarWorkshopManagementSystem.Models.ServiceOrder
+
+@{
+    ViewData["Title"] = "Szczegóły zlecenia #" + Model.Id;
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<div>
+    <hr />
+    <h4>Informacje o zleceniu</h4>
+    <div class="row">
+        <div class="col-md-6">
+            <dl class="row">
+                <dt class="col-sm-4">Klient</dt>
+                <dd class="col-sm-8">@Model.Vehicle.Customer.FullName</dd>
+
+                <dt class="col-sm-4">Pojazd</dt>
+                <dd class="col-sm-8">@Model.Vehicle.Brand @Model.Vehicle.Model (@Model.Vehicle.RegistrationNumber)</dd>
+
+                <dt class="col-sm-4">Data utworzenia</dt>
+                <dd class="col-sm-8">@Model.CreatedAt.ToLocalTime()</dd>
+
+                <dt class="col-sm-4">Status</dt>
+                <dd class="col-sm-8">@Model.Status</dd>
+
+                <dt class="col-sm-4">Mechanik</dt>
+                <dd class="col-sm-8">@(Model.AssignedMechanic?.UserName ?? "Nieprzypisany")</dd>
+            </dl>
+        </div>
+        <div class="col-md-6">
+            <h5>Opis problemu:</h5>
+            <p>@Model.Description</p>
+        </div>
+    </div>
+
+    <hr />
+
+    <h4>Czynności serwisowe</h4>
+    @if (!Model.Tasks.Any())
+    {
+        <p>Brak dodanych czynności.</p>
+    }
+    else
+    {
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Opis</th>
+                    <th>Koszt robocizny</th>
+                    <th>Użyte części</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var task in Model.Tasks)
+                {
+                    <tr>
+                        <td>@task.Description</td>
+                        <td>@task.LaborCost.ToString("C")</td>
+                        <td>
+                            @if (task.UsedParts.Any())
+                            {
+                                <ul>
+                                    @foreach (var usedPart in task.UsedParts)
+                                    {
+                                        <li>@usedPart.Part.Name (Ilość: @usedPart.Quantity)</li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <small class="text-muted">Brak części</small>
+                            }
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <div class="card mt-3">
+        <div class="card-header">
+            Dodaj nową czynność serwisową
+        </div>
+        <div class="card-body">
+            <form asp-controller="ServiceTasks" asp-action="Create" method="post">
+                <input type="hidden" name="ServiceOrderId" value="@Model.Id" />
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label for="Description">Opis czynności</label>
+                            <input name="Description" class="form-control" />
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="LaborCost">Koszt robocizny</label>
+                            <input name="LaborCost" type="number" step="0.01" class="form-control" />
+                        </div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary mt-2">Dodaj czynność</button>
+            </form>
+        </div>
+    </div>
+
+    <hr />
+
+    <h4>Komentarze</h4>
+    @if (Model.Comments.Any())
+    {
+        @foreach (var comment in Model.Comments.OrderByDescending(c => c.CreatedAt))
+        {
+            <div class="card bg-light mb-2">
+                <div class="card-body">
+                    <p class="card-text">@comment.Content</p>
+                    <footer class="blockquote-footer">@comment.Author.UserName o @comment.CreatedAt.ToLocalTime()</footer>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <p>Brak komentarzy.</p>
+    }
+
+    <div class="card mt-4">
+        <div class="card-header">
+            Dodaj komentarz
+        </div>
+        <div class="card-body">
+            <form asp-controller="Comments" asp-action="Create" method="post">
+                <input type="hidden" name="OrderId" value="@Model.Id" />
+                <div class="form-group">
+                    <textarea name="Content" class="form-control" rows="3" placeholder="Wpisz swój komentarz..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-info mt-2">Dodaj komentarz</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

@@ -1,9 +1,8 @@
-﻿// Controllers/CustomerController.cs
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using System.Collections.Generic; // Potrzebne dla List<Customer>
-using CarWorkshopManagementSystem.Models; // Upewnij się, że to jest!
-using CarWorkshopManagementSystem.Services; // Upewnij się, że to jest!
+using System.Collections.Generic;
+using CarWorkshopManagementSystem.Models;
+using CarWorkshopManagementSystem.Services;
 
 namespace CarWorkshopManagementSystem.Controllers
 {

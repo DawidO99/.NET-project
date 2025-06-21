@@ -33,6 +33,21 @@ namespace CarWorkshopManagementSystem
             // Rejestracja serwisów biznesowych
             builder.Services.AddScoped<ICustomerService, CustomerService>(); // To już masz, OK
 
+            //Rejestracja serwisu pojazdów
+            builder.Services.AddScoped<IVehicleService, VehicleService>();
+
+            // Rejestracja serwisu zleceń serwisowych
+            builder.Services.AddScoped<IServiceOrderService, ServiceOrderService>();
+
+            // Rejestracja serwisu zadań serwisowych
+            builder.Services.AddScoped<IServiceTaskService, ServiceTaskService>();
+
+            // Rejestracja serwisu Komentarzy
+            builder.Services.AddScoped<ICommentService, CommentService>();
+
+            // Rejestracja serwisu części
+            builder.Services.AddScoped<IPartService, PartService>();
+
             var app = builder.Build();
 
             // **********************************************

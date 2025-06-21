@@ -1,0 +1,36 @@
+﻿@model IEnumerable<CarWorkshopManagementSystem.Models.Vehicle>
+
+@{
+    ViewData["Title"] = "Pojazdy";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p>
+    <a asp-action="Create" class="btn btn-primary">Dodaj nowy pojazd</a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Marka i Model</th>
+            <th>Nr rejestracyjny</th>
+            <th>Właściciel</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@Html.DisplayFor(modelItem => item.Brand) @Html.DisplayFor(modelItem => item.Model)</td>
+                <td>@Html.DisplayFor(modelItem => item.RegistrationNumber)</td>
+                <td>@Html.DisplayFor(modelItem => item.Customer.FullName)</td>
+                <td>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edytuj</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
