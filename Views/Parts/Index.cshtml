@@ -15,7 +15,7 @@
             <th>Nazwa</th>
             <th>Typ</th>
             <th>Cena jednostkowa</th>
-            <th></th>
+            <th></th> 
         </tr>
     </thead>
     <tbody>
@@ -26,7 +26,9 @@
                 <td>@Html.DisplayFor(modelItem => item.Type)</td>
                 <td>@item.UnitPrice.ToString("C")</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id">Edytuj</a>
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edytuj</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id">Szczegóły</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id">Usuń</a>
                 </td>
             </tr>
         }
