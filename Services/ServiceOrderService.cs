@@ -43,7 +43,7 @@ namespace CarWorkshopManagementSystem.Services
 
         public async Task CreateOrderAsync(ServiceOrder order)
         {
-            order.Status = "Nowe"; // Zmienione z "New" dla spójności z modelem i językiem polskim
+            order.Status = ServiceOrderStatus.New;
             order.CreationDate = DateTime.Now; // Zmienione z CreatedAt = DateTime.UtcNow
             _context.ServiceOrders.Add(order);
             await _context.SaveChangesAsync();
