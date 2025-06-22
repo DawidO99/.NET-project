@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging; // Dodaj ten import
 using CarWorkshopManagementSystem.Models; // Dodaj ten import dla AppUser
 using System;
 using System.Threading.Tasks;
-
+//kdsdd
 namespace CarWorkshopManagementSystem.Data
 {
     public static class DataSeeder
