@@ -1,23 +1,36 @@
 ﻿@model CarWorkshopManagementSystem.Models.ServiceOrder
+@using System.Linq // Dodaj ten using dla .Any()
+@using static CarWorkshopManagementSystem.Controllers.EnumExtensions // DODANO: Aby używać GetDisplayName()
+@inject Microsoft.AspNetCore.Identity.UserManager<CarWorkshopManagementSystem.Models.AppUser> UserManager // DODANO: Potrzebne do sprawdzenia ról
 
 @{
     ViewData["Title"] = "Szczegóły zlecenia #" + Model.Id;
 }
 
 <h1>@ViewData["Title"]</h1>
+
+@* Wyświetlanie komunikatów z TempData *@
 @if (TempData["CommentValidationError"] != null)
 {
-        <div class="alert alert-danger" role="alert">
-            <strong>Błąd dodawania komentarza:</strong> @TempData["CommentValidationError"]
-        </div>
+    <div class="alert alert-danger" role="alert">
+        <strong>Błąd dodawania komentarza:</strong> @TempData["CommentValidationError"]
+    </div>
 }
 
 @if (TempData["SuccessMessage"] != null)
 {
-        <div class="alert alert-success" role="alert">
+    <div class="alert alert-success" role="alert">
         @TempData["SuccessMessage"]
-        </div>
+    </div>
 }
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger" role="alert">
+        @TempData["ErrorMessage"]
+    </div>
+}
+
 <div>
     <hr />
     <h4>Informacje o zleceniu</h4>
@@ -31,10 +44,18 @@
                 <dd class="col-sm-8">@Model.Vehicle.Brand @Model.Vehicle.Model (@Model.Vehicle.RegistrationNumber)</dd>
 
                 <dt class="col-sm-4">Data utworzenia</dt>
-                <dd class="col-sm-8">@Model.CreationDate.ToLocalTime()</dd>
+                <dd class="col-sm-8">@Model.CreationDate.ToLocalTime().ToString("g")</dd> @* DODANO: Formatowanie daty *@
 
                 <dt class="col-sm-4">Status</dt>
-                <dd class="col-sm-8">@Model.Status</dd>
+                <dd class="col-sm-8">
+                    @Model.Status.GetDisplayName() @* DODANO: Użycie metody rozszerzającej do wyświetlania nazwy displayowej *@
+                    @if (Model.Status == ServiceOrderStatus.Completed && Model.CompletionDate.HasValue)
+                    {
+                        <br />
+
+                        <small class="text-muted">(Zakończono: @Model.CompletionDate.Value.ToLocalTime().ToString("g"))</small> @* DODANO: Wyświetlanie daty zakończenia *@
+                    }
+                </dd>
 
                 <dt class="col-sm-4">Mechanik</dt>
                 <dd class="col-sm-8">@(Model.AssignedMechanic?.UserName ?? "Nieprzypisany")</dd>
@@ -45,6 +66,44 @@
             <p>@Model.Description</p>
         </div>
     </div>
+
+    @* Formularz do zmiany statusu zlecenia *@
+    @if (User.IsInRole("Admin") || User.IsInRole("Mechanik"))
+    {
+        <div class="card mt-3">
+            <div class="card-header">
+                Zmień status zlecenia
+            </div>
+            <div class="card-body">
+                <form asp-controller="ServiceOrders" asp-action="ChangeStatus" method="post">
+                    @Html.AntiForgeryToken() @* WAŻNE DLA BEZPIECZEŃSTWA *@
+                    <input type="hidden" name="orderId" value="@Model.Id" />
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-2">
+                                <label for="newStatus" class="form-label">Nowy status</label>
+                                @{
+                                    bool isDisabled = (Model.Status == ServiceOrderStatus.Completed || Model.Status == ServiceOrderStatus.Canceled);
+                                }
+                                <select name="newStatus" class="form-control" asp-items="ViewBag.Statuses" disabled="@isDisabled">
+                                    @* POPRAWIONO: Sposób ustawiania disabled *@
+                                    @* Opcje będą automatycznie wygenerowane przez asp-items *@
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <button type="submit" class="btn btn-warning" disabled="@isDisabled">Zmień Status</button> @* POPRAWIONO: Sposób ustawiania disabled *@
+                        </div>
+                    </div>
+                    @if (isDisabled)
+                    {
+                        <small class="text-muted">Status zakończonych lub anulowanych zleceń nie może być zmieniony.</small>
+                    }
+                </form>
+            </div>
+        </div>
+    }
+
 
     <hr />
 
@@ -101,21 +160,22 @@
         </div>
         <div class="card-body">
             <form asp-controller="ServiceTasks" asp-action="Create" method="post">
+                @Html.AntiForgeryToken() @* WAŻNE DLA BEZPIECZEŃSTWA *@
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div> @* Wyświetla błędy walidacji *@
                 <input type="hidden" name="ServiceOrderId" value="@Model.Id" />
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group mb-2">
-                            <label for="Description" class="form-label">Opis czynności</label>
-                            <input name="Description" class="form-control" />
-                            @* Dodaj span asp-validation-for="Description" jeśli masz walidację na modelu ServiceTask *@
+                            <label asp-for="@(new ServiceTask().Description)" class="form-label">Opis czynności</label> @* Użyto asp-for *@
+                            <input asp-for="@(new ServiceTask().Description)" class="form-control" /> @* Użyto asp-for *@
+                            <span asp-validation-for="@(new ServiceTask().Description)" class="text-danger"></span> @* DODANO SPAN WALIDACJI *@
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group mb-2">
-                            <label for="LaborCost" class="form-label">Koszt robocizny</label>
-                            <input name="LaborCost" type="number" step="0.01" class="form-control" />
-                            @* Dodaj span asp-validation-for="LaborCost" *@
+                            <label asp-for="@(new ServiceTask().LaborCost)" class="form-label">Koszt robocizny</label> @* Użyto asp-for *@
+                            <input asp-for="@(new ServiceTask().LaborCost)" type="number" step="0.01" class="form-control" /> @* Użyto asp-for *@
+                            <span asp-validation-for="@(new ServiceTask().LaborCost)" class="text-danger"></span> @* DODANO SPAN WALIDACJI *@
                         </div>
                     </div>
                 </div>
@@ -130,10 +190,9 @@
                                 <option value="">-- Wybierz część --</option>
                                 @if (ViewBag.Parts != null)
                                 {
-                                    // TA PĘTLA JEST POPRAWNA
-                                    @foreach (var item in (List<SelectListItem>)ViewBag.Parts)
+                                    foreach (var item in (List<SelectListItem>)ViewBag.Parts)
                                     {
-                                        <option value="@item.Value">@item.Text</option>
+                                        <option value="@item.Value">@Html.Raw(item.Text.Replace("`", "\\`"))</option>
                                     }
                                 }
                             </select>
@@ -164,17 +223,17 @@
             <div class="card bg-light mb-2">
                 <div class="card-body">
                     <p class="card-text">@comment.Content</p>
-                            <footer class="blockquote-footer">
+                    <footer class="blockquote-footer">
                         @if (comment.Author != null)
                         {
-                    <strong>@comment.Author.FullName</strong> @* Używamy FullName dla lepszego efektu *@
+                            <strong>@comment.Author.FullName</strong>
                         }
                         else
                         {
-                    <strong>Użytkownik usunięty</strong> @* Zabezpieczenie na wszelki wypadek *@
+                            <strong>Użytkownik usunięty</strong>
                         }
-            <cite title="Data dodania">o @comment.CreatedAt.ToLocalTime().ToString("g")</cite> @* Lepsze formatowanie daty *@
-        </footer>
+                        <cite title="Data dodania">o @comment.CreatedAt.ToLocalTime().ToString("g")</cite>
+                    </footer>
                 </div>
             </div>
         }
@@ -190,11 +249,12 @@
         </div>
         <div class="card-body">
             <form asp-controller="Comments" asp-action="Create" method="post">
+                @Html.AntiForgeryToken() @* WAŻNE DLA BEZPIECZEŃSTWA *@
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div> @* Wyświetla błędy walidacji *@
                 <input type="hidden" name="OrderId" value="@Model.Id" />
                 <div class="form-group mb-2">
-                    <textarea name="Content" class="form-control" rows="3" placeholder="Wpisz swój komentarz..."></textarea>
-                    @* Dodaj span asp-validation-for="Content" *@
+                    <textarea asp-for="@(new Comment().Content)" class="form-control" rows="3" placeholder="Wpisz swój komentarz..."></textarea> @* Użyto asp-for *@
+                    <span asp-validation-for="@(new Comment().Content)" class="text-danger"></span> @* DODANO SPAN WALIDACJI *@
                 </div>
                 <button type="submit" class="btn btn-info mt-2">Dodaj komentarz</button>
             </form>
@@ -203,6 +263,8 @@
 </div>
 
 <div class="mt-3">
+    <a asp-action="Edit" asp-route-id="@Model?.Id" class="btn btn-primary">Edytuj zlecenie</a> | @* DODANO: Link do edycji zlecenia *@
+    <a asp-action="Delete" asp-route-id="@Model?.Id" class="btn btn-danger">Usuń zlecenie</a> | @* DODANO: Link do usuwania zlecenia *@
     <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>
 </div>
 
@@ -221,16 +283,12 @@
                 newPartRow.classList.add('row', 'mb-2', 'part-row');
                 newPartRow.setAttribute('data-part-index', partIndex);
 
-                // ZMIENIONA SEKCJA: Poprawne renderowanie opcji SelectListItem
                 let partOptionsHtml = '<option value="">-- Wybierz część --</option>';
         @if (ViewBag.Parts != null)
         {
-            // MUSISZ SKONSTRUOWAĆ TEN CIĄG HTML W BLOKU RAZOR, ABY JAVASCRIPT MÓGŁ GO UŻYĆ
-            // Wczesniej było @foreach (var part in ViewBag.Parts), co powodowało błąd
-            // Teraz rzutujemy ViewBag.Parts na List<SelectListItem> i używamy item.Value i item.Text
             foreach (var item in (List<SelectListItem>)ViewBag.Parts)
             {
-                @:partOptionsHtml += `<option value="@item.Value">@Html.Raw(item.Text.Replace("`", "\\`"))</option>`; // Użyj Html.Raw i zabezpiecz backticki dla JS
+                @:partOptionsHtml += `<option value="@item.Value">@Html.Raw(item.Text.Replace("`", "\\`"))</option>`;
             }
         }
 
