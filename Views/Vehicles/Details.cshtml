@@ -5,7 +5,7 @@
     ViewData["Title"] = "Szczegóły Pojazdu: " + Model.RegistrationNumber;
 }
 
-<h1>Szczegóły Pojazdu</h1>
+<h1>@ViewData["Title"]</h1>
 
 <div>
     <h4>Pojazd</h4>
@@ -60,7 +60,7 @@
                 Zdjęcie
             </dt>
             <dd class="col-sm-10">
-                <img src="~/uploads/@Model.ImageUrl" alt="Zdjęcie pojazdu" style="max-width: 300px; height: auto;" />
+                <img src="@Model.ImageUrl" alt="Zdjęcie pojazdu" style="max-width: 300px; height: auto;" /> @* ZMIENIONO: Usunięto "~/uploads/" *@
             </dd>
         }
     </dl>
@@ -86,7 +86,7 @@
                 <tr>
                     <td>@Html.DisplayFor(modelItem => order.Description)</td>
                     <td>@Html.DisplayFor(modelItem => order.Status)</td>
-                    <td>@Html.DisplayFor(modelItem => order.CreationDate)</td> @* Używa CreationDate *@
+                    <td>@order.CreationDate.ToLocalTime().ToString("g")</td> @* DODANO: Formatowanie daty na czas lokalny *@
                     <td>
                         @if (order.AssignedMechanic != null)
                         {

@@ -4,50 +4,73 @@
     ViewData["Title"] = "Edytuj Pojazd";
 }
 
-<h1>Edytuj Pojazd</h1>
+<h1>@ViewData["Title"]</h1>
 
 <h4>Pojazd</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Edit">
+        @* ZMIENIONO: Dodano method="post" i enctype="multipart/form-data" *@
+        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken() @* DODANO: Token antyfałszerstwa *@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" /> @* Ukryte pole dla ID pojazdu *@
-            <div class="form-group">
+
+            @* DODANO: Ukryte pole dla ImageUrl, aby przesłać obecną wartość, jeśli nie ma nowego pliku ani flagi usunięcia *@
+            @* Ważne: to pole zostanie nadpisane w kontrolerze/serwisie, jeśli będzie nowy plik lub flaga usunięcia *@
+            <input type="hidden" asp-for="ImageUrl" />
+
+            <div class="form-group mb-3">
                 <label asp-for="CustomerId" class="control-label"></label>
                 <select asp-for="CustomerId" class="form-control" asp-items="ViewBag.Customers"></select>
                 <span asp-validation-for="CustomerId" class="text-danger"></span>
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <label asp-for="Brand" class="control-label"></label>
                 <input asp-for="Brand" class="form-control" />
                 <span asp-validation-for="Brand" class="text-danger"></span>
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <label asp-for="Model" class="control-label"></label>
                 <input asp-for="Model" class="form-control" />
                 <span asp-validation-for="Model" class="text-danger"></span>
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <label asp-for="VIN" class="control-label"></label>
                 <input asp-for="VIN" class="form-control" />
                 <span asp-validation-for="VIN" class="text-danger"></span>
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <label asp-for="RegistrationNumber" class="control-label"></label>
                 <input asp-for="RegistrationNumber" class="form-control" />
                 <span asp-validation-for="RegistrationNumber" class="text-danger"></span>
             </div>
-            <div class="form-group">
+            <div class="form-group mb-3">
                 <label asp-for="Year" class="control-label"></label>
                 <input asp-for="Year" class="form-control" />
                 <span asp-validation-for="Year" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="ImageUrl" class="control-label"></label>
-                <input asp-for="ImageUrl" class="form-control" />
-                <span asp-validation-for="ImageUrl" class="text-danger"></span>
+
+            @* DODANO: Pole do uploadu nowego zdjęcia *@
+            <div class="form-group mb-3">
+                <label asp-for="ImageFile" class="control-label">Wgraj nowe zdjęcie (opcjonalnie)</label>
+                <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" />
+                <span asp-validation-for="ImageFile" class="text-danger"></span>
             </div>
+
+            @* DODANO: Wyświetlanie aktualnego zdjęcia i opcja jego usunięcia *@
+            @if (!string.IsNullOrEmpty(Model.ImageUrl))
+            {
+                <div class="mb-3">
+                    <label class="control-label">Aktualne zdjęcie:</label><br />
+                    <img src="@Model.ImageUrl" alt="Zdjęcie pojazdu" style="max-width: 200px; height: auto;" /><br />
+                    <div class="form-check mt-2">
+                        <input type="checkbox" name="removeCurrentImage" value="true" class="form-check-input" id="removeCurrentImage" />
+                        <label class="form-check-label" for="removeCurrentImage">Usuń aktualne zdjęcie</label>
+                    </div>
+                </div>
+            }
+
             <div class="form-group mt-3">
                 <input type="submit" value="Zapisz zmiany" class="btn btn-primary" />
                 <a asp-action="Index" class="btn btn-secondary">Powrót do listy</a>

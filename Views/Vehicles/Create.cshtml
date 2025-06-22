@@ -1,5 +1,5 @@
 ﻿@model CarWorkshopManagementSystem.Models.Vehicle
-@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@* @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers - Ta linia jest już globalnie w _ViewImports.cshtml *@
 
 @{
     ViewData["Title"] = "Dodaj Pojazd";
@@ -10,12 +10,13 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="Create">
+        @* ZMIENIONO: Dodano method="post" i enctype="multipart/form-data" *@
+        <form asp-action="Create" method="post" enctype="multipart/form-data">
+            @Html.AntiForgeryToken() @* DODANO: Token antyfałszerstwa *@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
             <div class="form-group mb-3">
                 <label asp-for="CustomerId" class="control-label">Właściciel</label>
-                @* SelectList przekazany z kontrolera będzie już zawierał wybraną wartość, jeśli model.CustomerId jest ustawione *@
                 <select asp-for="CustomerId" class="form-control" asp-items="ViewBag.Customers">
                     <option value="">-- Wybierz klienta --</option>
                 </select>
@@ -52,12 +53,12 @@
                 <span asp-validation-for="Year" class="text-danger"></span>
             </div>
 
-            @* Pole dla ImageUrl będzie dodane później przy funkcjonalności uploadu plików *@
-            @* <div class="form-group mb-3">
-                <label asp-for="ImageUrl" class="control-label">URL Zdjęcia</label>
-                <input asp-for="ImageUrl" class="form-control" />
-                <span asp-validation-for="ImageUrl" class="text-danger"></span>
-            </div> *@
+            @* DODANO: Pole do uploadu zdjęcia *@
+            <div class="form-group mb-3">
+                <label asp-for="ImageFile" class="control-label">Zdjęcie pojazdu (opcjonalnie)</label>
+                <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" />
+                <span asp-validation-for="ImageFile" class="text-danger"></span>
+            </div>
 
             <div class="form-group">
                 <input type="submit" value="Dodaj" class="btn btn-primary" />
