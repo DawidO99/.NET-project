@@ -4,11 +4,12 @@ using CarWorkshopManagementSystem.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace CarWorkshopManagementSystem.Controllers
 {
-    [Authorize] // Autoryzacja dla komentarzy, np. każdy zalogowany użytkownik
+    [Authorize]
     public class CommentsController : Controller
     {
         private readonly ICommentService _commentService;
@@ -22,34 +23,46 @@ namespace CarWorkshopManagementSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Content,OrderId")] Comment comment)
+        // --- GŁÓWNA ZMIANA TUTAJ ---
+        // Zamiast bindować cały obiekt Comment, przyjmujemy proste parametry z formularza.
+        // Nazwy parametrów (orderId, content) muszą pasować do atrybutów 'name' w formularzu.
+        // W Twoim formularzu jest <input name="OrderId"> i <textarea name="Content">, więc wielkość liter ma znaczenie.
+        // Aby to ujednolicić, użyjemy atrybutu [FromForm].
+        public async Task<IActionResult> Create([FromForm(Name = "OrderId")] int orderId, [FromForm(Name = "Content")] string content)
         {
-            // Usunięcie walidacji dla właściwości nawigacyjnych
-            ModelState.Remove("Author");
-            ModelState.Remove("Order");
-
-            if (ModelState.IsValid)
+            var currentUser = await _userManager.GetUserAsync(User);
+            if (currentUser == null)
             {
-                var currentUser = await _userManager.GetUserAsync(User);
-                if (currentUser == null)
-                {
-                    // Użytkownik niezalogowany lub błąd. Możesz przekierować na stronę logowania lub zwrócić błąd.
-                    return Unauthorized();
-                }
-
-                comment.AuthorId = currentUser.Id;
-                // CreatedAt jest ustawiane w CommentService
-
-                await _commentService.CreateCommentAsync(comment);
-                // Przekieruj z powrotem na stronę szczegółów zlecenia, z którego przyszedł komentarz
-                return RedirectToAction("Details", "ServiceOrders", new { id = comment.OrderId });
+                return Unauthorized();
             }
 
-            // Jeśli model nie jest poprawny, można zwrócić widok z błędem walidacji,
-            // ale dla komentarza na stronie szczegółów zlecenia, lepsze jest przekierowanie
-            // z informacją o błędzie. TempData może być użyte.
-            TempData["ErrorMessage"] = "Wystąpił błąd podczas dodawania komentarza. Upewnij się, że pole nie jest puste.";
-            return RedirectToAction("Details", "ServiceOrders", new { id = comment.OrderId });
+            // Ręcznie tworzymy kompletny obiekt Comment
+            var comment = new Comment
+            {
+                OrderId = orderId,
+                Content = content,
+                AuthorId = currentUser.Id
+            };
+
+            // Teraz, gdy obiekt jest kompletny, możemy go bezpiecznie zwalidować.
+            if (TryValidateModel(comment))
+            {
+                // Ścieżka sukcesu
+                await _commentService.CreateCommentAsync(comment);
+                TempData["SuccessMessage"] = "Komentarz został pomyślnie dodany.";
+                return RedirectToAction("Details", "ServiceOrders", new { id = comment.OrderId });
+            }
+            else
+            {
+                // Ścieżka błędu (np. pusta treść)
+                var errorMessages = ModelState.Values
+                                         .SelectMany(v => v.Errors)
+                                         .Select(e => e.ErrorMessage)
+                                         .ToList();
+
+                TempData["CommentValidationError"] = string.Join(" ", errorMessages);
+                return RedirectToAction("Details", "ServiceOrders", new { id = orderId });
+            }
         }
     }
 }

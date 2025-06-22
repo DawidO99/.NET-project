@@ -5,7 +5,19 @@
 }
 
 <h1>@ViewData["Title"]</h1>
+@if (TempData["CommentValidationError"] != null)
+{
+        <div class="alert alert-danger" role="alert">
+            <strong>Błąd dodawania komentarza:</strong> @TempData["CommentValidationError"]
+        </div>
+}
 
+@if (TempData["SuccessMessage"] != null)
+{
+        <div class="alert alert-success" role="alert">
+        @TempData["SuccessMessage"]
+        </div>
+}
 <div>
     <hr />
     <h4>Informacje o zleceniu</h4>
@@ -152,7 +164,17 @@
             <div class="card bg-light mb-2">
                 <div class="card-body">
                     <p class="card-text">@comment.Content</p>
-                    <footer class="blockquote-footer">@comment.Author.UserName o @comment.CreatedAt.ToLocalTime()</footer>
+                            <footer class="blockquote-footer">
+                        @if (comment.Author != null)
+                        {
+                    <strong>@comment.Author.FullName</strong> @* Używamy FullName dla lepszego efektu *@
+                        }
+                        else
+                        {
+                    <strong>Użytkownik usunięty</strong> @* Zabezpieczenie na wszelki wypadek *@
+                        }
+            <cite title="Data dodania">o @comment.CreatedAt.ToLocalTime().ToString("g")</cite> @* Lepsze formatowanie daty *@
+        </footer>
                 </div>
             </div>
         }

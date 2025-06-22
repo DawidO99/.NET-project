@@ -9,13 +9,19 @@ namespace CarWorkshopManagementSystem.Models
         public int Id { get; set; }
 
         public string AuthorId { get; set; } = null!;
-        public AppUser Author { get; set; } = null!;
 
-        [Required]
+        // POPRAWKA: Zmieniamy właściwość na nullowalną (dodajemy '?')
+        // Dzięki temu walidator nie będzie wymagał tego obiektu przy tworzeniu komentarza.
+        public AppUser? Author { get; set; }
+
+        [Required(ErrorMessage = "Treść komentarza jest wymagana.")]
         public string Content { get; set; } = string.Empty;
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public int OrderId { get; set; }
-        public ServiceOrder Order { get; set; } = null!;
+
+        // POPRAWKA: Zmieniamy właściwość na nullowalną (dodajemy '?')
+        public ServiceOrder? Order { get; set; }
     }
 }
