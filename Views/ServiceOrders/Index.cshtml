@@ -1,6 +1,6 @@
 ﻿@model IEnumerable<CarWorkshopManagementSystem.Models.ServiceOrder>
 @using CarWorkshopManagementSystem.Models
-@using static CarWorkshopManagementSystem.Controllers.EnumExtensions // DODANO: Aby używać GetDisplayName()
+@using static CarWorkshopManagementSystem.Services.EnumExtensions // DODANO: Aby używać GetDisplayName()
 @inject Microsoft.AspNetCore.Identity.UserManager<AppUser> UserManager // DODANO: Potrzebne do sprawdzenia ról
 
 @{

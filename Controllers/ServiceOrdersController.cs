@@ -2,17 +2,17 @@
 using CarWorkshopManagementSystem.Models;
 using CarWorkshopManagementSystem.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity; // Potrzebne do UserManager
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering; // Potrzebne do SelectList i SelectListItem
-using Microsoft.EntityFrameworkCore; // Potrzebne dla DbUpdateConcurrencyException
-using Microsoft.Extensions.Logging; // Dodano dla ILogger
-using System; // Dodano dla Exception i KeyNotFoundException
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Collections.Generic; // Dodaj to, jeśli jeszcze nie masz
-using System.Reflection; // DODANO: Wymagane dla GetCustomAttribute
-using static CarWorkshopManagementSystem.Services.EnumExtensions;
+using System.Collections.Generic;
+using System.Reflection; // Wymagane dla GetCustomAttribute
+using static CarWorkshopManagementSystem.Services.EnumExtensions; // Potrzebne dla GetDisplayName()
 
 namespace CarWorkshopManagementSystem.Controllers
 {
@@ -21,18 +21,17 @@ namespace CarWorkshopManagementSystem.Controllers
     {
         private readonly IServiceOrderService _orderService;
         private readonly IVehicleService _vehicleService;
-        private readonly UserManager<AppUser> _userManager; // Serwis do zarządzania użytkownikami
-        private readonly IPartService _partService; // Serwis do zarządzania częściami
-        private readonly ILogger<ServiceOrdersController> _logger; // DODANO: Logger
+        private readonly UserManager<AppUser> _userManager;
+        private readonly IPartService _partService;
+        private readonly ILogger<ServiceOrdersController> _logger;
 
-        // ZMODYFIKOWANY KONSTRUKTOR: Dodano IPartService i ILogger
         public ServiceOrdersController(IServiceOrderService orderService, IVehicleService vehicleService, UserManager<AppUser> userManager, IPartService partService, ILogger<ServiceOrdersController> logger)
         {
             _orderService = orderService;
             _vehicleService = vehicleService;
             _userManager = userManager;
-            _partService = partService; // Zainicjowanie serwisu części
-            _logger = logger; // Zainicjowanie loggera
+            _partService = partService;
+            _logger = logger;
         }
 
         public async Task<IActionResult> Index()
@@ -47,7 +46,7 @@ namespace CarWorkshopManagementSystem.Controllers
             {
                 _logger.LogError(ex, "Błąd podczas pobierania wszystkich zleceń serwisowych.");
                 TempData["ErrorMessage"] = "Wystąpił błąd podczas ładowania zleceń.";
-                return View(new List<ServiceOrder>()); // Zwróć pustą listę w razie błędu
+                return View(new List<ServiceOrder>());
             }
         }
 
@@ -61,9 +60,6 @@ namespace CarWorkshopManagementSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("VehicleId,Description,AssignedMechanicId")] ServiceOrder serviceOrder)
         {
-            // ModelState.Remove("Vehicle"); // To było wcześniej potrzebne, jeśli model Vehicle miał walidację Required.
-            // Jeśli Vehicle jest Required w modelu ServiceOrder i nie jest bindowane, ten ModelState.Remove może być konieczny.
-            // Przy użyciu [ValidateNever] na właściwości nawigacyjnej, to może być zbędne, ale zostawiam jako bezpieczne.
             ModelState.Remove("Vehicle");
 
             if (ModelState.IsValid)
@@ -111,22 +107,19 @@ namespace CarWorkshopManagementSystem.Controllers
                     return NotFound();
                 }
 
-                // Ładowanie dostępnych części dla dropdownów w formularzu dodawania czynności
                 var parts = await _partService.GetAllPartsAsync();
                 ViewBag.Parts = parts.Select(p => new SelectListItem
                 {
                     Value = p.Id.ToString(),
-                    Text = $"{p.Name} ({p.UnitPrice:C})" // Formatowanie nazwy i ceny dla widoku
+                    Text = $"{p.Name} ({p.UnitPrice:C})"
                 }).ToList();
 
-                // Dodanie dostępnych statusów do ViewBag dla dropdowna zmiany statusu
-                // Używamy GetValues i GetNames aby uzyskać wartości enumów i ich nazw displayowych
                 ViewBag.Statuses = Enum.GetValues(typeof(ServiceOrderStatus))
                                        .Cast<ServiceOrderStatus>()
                                        .Select(s => new SelectListItem
                                        {
                                            Value = ((int)s).ToString(),
-                                           Text = s.GetDisplayName() // Metoda rozszerzająca do pobierania DisplayName
+                                           Text = s.GetDisplayName()
                                        })
                                        .ToList();
 
@@ -137,14 +130,14 @@ namespace CarWorkshopManagementSystem.Controllers
             {
                 _logger.LogError(ex, "Błąd podczas pobierania szczegółów zlecenia ID {OrderId}.", id.Value);
                 TempData["ErrorMessage"] = "Wystąpił błąd podczas ładowania szczegółów zlecenia.";
-                return RedirectToAction(nameof(Index)); // Przekieruj do listy zleceń
+                return RedirectToAction(nameof(Index));
             }
         }
 
-        // NOWA AKCJA: POST do zmiany statusu zlecenia
+        // POST do zmiany statusu zlecenia
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Mechanik")] // Tylko Admin i Mechanik mogą zmieniać status
+        [Authorize(Roles = "Admin,Mechanik")]
         public async Task<IActionResult> ChangeStatus(int orderId, ServiceOrderStatus newStatus)
         {
             try
@@ -168,7 +161,7 @@ namespace CarWorkshopManagementSystem.Controllers
             }
         }
 
-        // NOWA AKCJA: GET dla strony edycji zlecenia
+        // GET dla strony edycji zlecenia
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null)
@@ -182,13 +175,19 @@ namespace CarWorkshopManagementSystem.Controllers
                 return NotFound();
             }
             await PopulateDropdowns(serviceOrder); // Wypełnij dropdowny dla formularza edycji
+            // Populating ViewBag.Statuses explicitly for Edit (if PopulateDropdowns doesn't cover it)
+            // Ta linia jest zbędna, bo PopulateDropdowns już to robi
+            // ViewBag.Statuses = Enum.GetValues(typeof(ServiceOrderStatus))
+            // .Cast<ServiceOrderStatus>()
+            // .Select(s => new SelectListItem { Value = ((int)s).ToString(), Text = s.GetDisplayName() })
+            // .ToList();
             return View(serviceOrder);
         }
 
-        // NOWA AKCJA: POST dla strony edycji zlecenia
+        // POST dla strony edycji zlecenia
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Recepcjonista")] // Tylko Admin i Recepcjonista mogą edytować ogólne dane zlecenia
+        [Authorize(Roles = "Admin,Recepcjonista")]
         public async Task<IActionResult> Edit(int id, [Bind("Id,VehicleId,Description,AssignedMechanicId,Status,RowVersion")] ServiceOrder serviceOrder)
         {
             if (id != serviceOrder.Id)
@@ -196,34 +195,39 @@ namespace CarWorkshopManagementSystem.Controllers
                 return NotFound();
             }
 
-            ModelState.Remove("Vehicle"); // Ponownie, jeśli Vehicle jest Required, może być potrzebne usunięcie z ModelState
+            ModelState.Remove("Vehicle");
 
-            // Zachowaj daty, jeśli nie są bindowane z formularza
-            // Pobieramy aktualny stan z bazy, aby zachować CreationDate i CompletionDate, które nie są bindowane z formularza
-            var existingOrder = await _orderService.GetOrderByIdAsync(id);
+            // POBIERAMY istniejący obiekt, który jest ŚLEDZONY
+            var existingOrder = await _orderService.GetOrderByIdAsync(id); // ZMODYFIKOWANO
             if (existingOrder == null)
             {
                 TempData["ErrorMessage"] = "Błąd: Zlecenie zostało usunięte przez innego użytkownika.";
                 return NotFound();
             }
 
-            serviceOrder.CreationDate = existingOrder.CreationDate;
-            serviceOrder.CompletionDate = existingOrder.CompletionDate; // Zachowaj CompletionDate
+            // Kopiujemy zmienione właściwości Z OBIEKTU Z FORMULARZA (serviceOrder)
+            // DO OBIEKTU ŚLEDZONEGO (existingOrder)
+            existingOrder.VehicleId = serviceOrder.VehicleId;
+            existingOrder.Description = serviceOrder.Description;
+            existingOrder.AssignedMechanicId = serviceOrder.AssignedMechanicId;
+            existingOrder.Status = serviceOrder.Status;
+            existingOrder.RowVersion = serviceOrder.RowVersion; // WAŻNE: Kopiuj RowVersion dla optymistycznej współbieżności
+
+            // Nie kopiujemy CreationDate ani CompletionDate, bo powinny być zarządzane przez logikę serwisu
+            // i nie powinny być zmieniane bezpośrednio z formularza.
 
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // Używamy UpdateOrderAsync, który wymaga, aby obiekt był śledzony lub abyśmy użyli _context.Entry(order).State = EntityState.Modified;
-                    // W ServiceOrderService użyliśmy _context.Entry(order).State = EntityState.Modified;, więc to jest OK.
-                    await _orderService.UpdateOrderAsync(serviceOrder);
+                    // TERAZ PRZEKAZUJEMY ŚLEDZONY OBIEKT DO SERWISU
+                    await _orderService.UpdateOrderAsync(existingOrder); // ZMIENIONO: Przekazujemy existingOrder
                     TempData["SuccessMessage"] = "Zlecenie zostało pomyślnie zaktualizowane.";
-                    return RedirectToAction(nameof(Index));
+                    return RedirectToAction("Details", new { id = existingOrder.Id }); // ZMODYFIKOWANO: Przekierowanie do Details
+
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    // Jeśli wystąpi konflikt współbieżności, sprawdź, czy obiekt nadal istnieje
-                    // (może został usunięty przez innego użytkownika)
                     if (await _orderService.GetOrderByIdAsync(serviceOrder.Id) == null)
                     {
                         TempData["ErrorMessage"] = "Błąd: Zlecenie zostało usunięte przez innego użytkownika.";
@@ -233,9 +237,18 @@ namespace CarWorkshopManagementSystem.Controllers
                     {
                         TempData["ErrorMessage"] = "Błąd: Zlecenie zostało zmienione przez innego użytkownika. Twoje zmiany nie zostały zapisane.";
                         _logger.LogWarning("Konflikt współbieżności podczas edycji zlecenia ID {OrderId}.", serviceOrder.Id);
-                        // Jeśli chcesz wyświetlić formularz z bieżącymi danymi z bazy, możesz to zrobić tutaj,
-                        // ale na razie rzucamy wyjątek dalej, aby globalny handler go złapał, jeśli nie ma innego mechanizmu.
-                        throw; // Rzucamy wyjątek dalej, aby to była kwestia do dalszej diagnozy
+                        // Przy konflikcie, załaduj świeże dane i wróć do widoku, aby użytkownik widział aktualny stan
+                        var freshOrder = await _orderService.GetOrderByIdAsync(id);
+                        await PopulateDropdowns(freshOrder);
+                        ViewBag.Statuses = Enum.GetValues(typeof(ServiceOrderStatus))
+                                               .Cast<ServiceOrderStatus>()
+                                               .Select(s => new SelectListItem
+                                               {
+                                                   Value = ((int)s).ToString(),
+                                                   Text = s.GetDisplayName()
+                                               })
+                                               .ToList();
+                        return View(freshOrder); // Zwróć widok ze świeżymi danymi
                     }
                 }
                 catch (Exception ex)
@@ -244,11 +257,20 @@ namespace CarWorkshopManagementSystem.Controllers
                     TempData["ErrorMessage"] = "Wystąpił nieoczekiwany błąd podczas aktualizacji zlecenia.";
                 }
             }
-            await PopulateDropdowns(serviceOrder); // Ponownie wypełnij dropdowny w przypadku błędu
+            // Jeśli ModelState.IsValid jest false lub inny nieobsłużony błąd (poza konfliktem)
+            await PopulateDropdowns(serviceOrder);
+            ViewBag.Statuses = Enum.GetValues(typeof(ServiceOrderStatus))
+                                   .Cast<ServiceOrderStatus>()
+                                   .Select(s => new SelectListItem
+                                   {
+                                       Value = ((int)s).ToString(),
+                                       Text = s.GetDisplayName()
+                                   })
+                                   .ToList();
             return View(serviceOrder);
         }
 
-        // NOWA AKCJA: GET dla strony usuwania zlecenia
+        // GET dla strony usuwania zlecenia
         public async Task<IActionResult> Delete(int? id)
         {
             if (id == null)
@@ -265,10 +287,10 @@ namespace CarWorkshopManagementSystem.Controllers
             return View(serviceOrder);
         }
 
-        // NOWA AKCJA: POST dla usuwania zlecenia
+        // POST dla usuwania zlecenia
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Recepcjonista")] // Tylko Admin i Recepcjonista mogą usuwać zlecenia
+        [Authorize(Roles = "Admin,Recepcjonista")]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try
@@ -298,7 +320,6 @@ namespace CarWorkshopManagementSystem.Controllers
             var vehicles = await _vehicleService.GetAllVehiclesAsync();
             var mechanics = await _userManager.GetUsersInRoleAsync("Mechanik");
 
-            // Tworzymy listę pojazdów w formacie "Marka Model (Rejestracja)"
             var vehicleList = vehicles.Select(v => new
             {
                 v.Id,
@@ -307,19 +328,30 @@ namespace CarWorkshopManagementSystem.Controllers
 
             ViewBag.Vehicles = new SelectList(vehicleList, "Id", "DisplayText", model?.VehicleId);
             ViewBag.Mechanics = new SelectList(mechanics, "Id", "UserName", model?.AssignedMechanicId);
+
+            ViewBag.Statuses = Enum.GetValues(typeof(ServiceOrderStatus))
+                                   .Cast<ServiceOrderStatus>()
+                                   .Select(s => new SelectListItem
+                                   {
+                                       Value = ((int)s).ToString(),
+                                       Text = s.GetDisplayName()
+                                   })
+                                   .ToList();
         }
     }
 
     // Klasa pomocnicza dla pobierania DisplayName z enumów
-    public static class EnumExtensions
-    {
-        public static string GetDisplayName(this Enum enumValue)
-        {
-            return enumValue.GetType()
-                            .GetMember(enumValue.ToString())
-                            .FirstOrDefault()?
-                            .GetCustomAttribute<System.ComponentModel.DataAnnotations.DisplayAttribute>()?
-                            .Name ?? enumValue.ToString();
-        }
-    }
+    // UWAGA: Ta klasa powinna być w osobnym pliku (np. Services/EnumExtensions.cs)
+    // Usunięcie jej stąd jest KLUCZOWE, bo jest to błąd CS1022.
+    // public static class EnumExtensions
+    // {
+    //     public static string GetDisplayName(this Enum enumValue)
+    //     {
+    //         return enumValue.GetType()
+    //                         .GetMember(enumValue.ToString())
+    //                         .FirstOrDefault()?
+    //                         .GetCustomAttribute<System.ComponentModel.DataAnnotations.DisplayAttribute>()?
+    //                         .Name ?? enumValue.ToString();
+    //     }
+    // }
 }

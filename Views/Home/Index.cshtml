@@ -1,8 +1,89 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+﻿@using Microsoft.AspNetCore.Identity
+@using CarWorkshopManagementSystem.Models
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+
+@{
+    ViewData["Title"] = "Strona główna - System warsztatu";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center py-5 bg-light rounded shadow-sm mb-4">
+    <h1 class="display-4 text-primary mb-3">Witaj w Systemie Zarządzania Warsztatem Samochodowym!</h1>
+    <p class="lead text-muted">
+        Usprawnij zarządzanie klientami, pojazdami i zleceniami serwisowymi w Twoim warsztacie.
+    </p>
 </div>
+
+@if (SignInManager.IsSignedIn(User))
+{
+    var currentUser = await UserManager.GetUserAsync(User);
+    var roles = await UserManager.GetRolesAsync(currentUser);
+
+    <h2 class="text-center mb-4">Twój panel szybkiego dostępu</h2>
+
+    <div class="row justify-content-center">
+        @if (User.IsInRole("Admin"))
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Administrator</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Pełna kontrola nad systemem, zarządzanie użytkownikami, częściami i raportami.</p>
+                        <ul class="list-unstyled">
+                            <li><a asp-controller="Admin" asp-action="Index" class="btn btn-outline-primary btn-block mb-2">Zarządzaj użytkownikami</a></li>
+                            <li><a asp-controller="Parts" asp-action="Index" class="btn btn-outline-primary btn-block mb-2">Katalog części</a></li>
+                            <li><a asp-controller="ServiceOrders" asp-action="Index" class="btn btn-outline-primary btn-block">Wszystkie zlecenia</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (User.IsInRole("Recepcjonista"))
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0">Recepcjonista</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Zarządzanie klientami, pojazdami i tworzenie zleceń serwisowych.</p>
+                        <ul class="list-unstyled">
+                            <li><a asp-controller="Customer" asp-action="Index" class="btn btn-outline-success btn-block mb-2">Zarządzaj klientami</a></li>
+                            <li><a asp-controller="Vehicles" asp-action="Index" class="btn btn-outline-success btn-block mb-2">Zarządzaj pojazdami</a></li>
+                            <li><a asp-controller="ServiceOrders" asp-action="Create" class="btn btn-outline-success btn-block">Dodaj nowe zlecenie</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (User.IsInRole("Mechanik"))
+        {
+            <div class="col-md-4 mb-4">
+                <div class="card h-100 shadow">
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="mb-0">Mechanik</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Dostęp do zleceń serwisowych, dodawanie czynności i części.</p>
+                        <ul class="list-unstyled">
+                            <li><a asp-controller="ServiceOrders" asp-action="Index" class="btn btn-outline-warning btn-block mb-2">Moje zlecenia (Wszystkie)</a></li>
+                            <li><a asp-controller="ServiceOrders" asp-action="InProgress" class="btn btn-outline-warning btn-block">Zlecenia w trakcie (TODO)</a></li>
+                            @* Możesz dodać tu filtr dla zleceń przypisanych bezpośrednio do mechanika *@
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="text-center mt-5">
+        <p class="lead">Aby skorzystać z funkcji systemu, proszę się <a asp-area="Identity" asp-page="/Account/Login">zalogować</a>.</p>
+        <p class="text-muted">Jeśli nie masz konta, możesz się <a asp-area="Identity" asp-page="/Account/Register">zarejestrować</a>.</p>
+    </div>
+}

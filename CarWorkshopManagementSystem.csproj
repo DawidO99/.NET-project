@@ -28,6 +28,12 @@
 
   <ItemGroup>
     <Folder Include="Areas\Identity\Pages\Account\" />
+    <Folder Include="Migrations\" />
+    <Folder Include="NewFolder\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include=".github\workflows\dotnet-ci.yml" />
   </ItemGroup>
 
 </Project>

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CarWorkshopManagementSystem.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250621155157_AddEditDeleteVehicleActionsAndCorrectServiceOrderDate")]
-    partial class AddEditDeleteVehicleActionsAndCorrectServiceOrderDate
+    [Migration("20250623204632_InitialDatabaseSetup")]
+    partial class InitialDatabaseSetup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -43,6 +43,12 @@ namespace CarWorkshopManagementSystem.Data.Migrations
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
+
+                    b.Property<string>("FirstName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("LastName")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("bit");
@@ -136,9 +142,13 @@ namespace CarWorkshopManagementSystem.Data.Migrations
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("FullName");
+
+                    b.HasIndex("PhoneNumber");
 
                     b.ToTable("Customers");
                 });
@@ -153,15 +163,17 @@ namespace CarWorkshopManagementSystem.Data.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Type")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("UnitPrice")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18, 2)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("Name");
 
                     b.ToTable("Parts");
                 });
@@ -177,16 +189,24 @@ namespace CarWorkshopManagementSystem.Data.Migrations
                     b.Property<string>("AssignedMechanicId")
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<DateTime?>("CompletionDate")
+                        .HasColumnType("datetime2");
+
                     b.Property<DateTime>("CreationDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<int>("VehicleId")
                         .HasColumnType("int");
@@ -213,7 +233,7 @@ namespace CarWorkshopManagementSystem.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("LaborCost")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("decimal(18, 2)");
 
                     b.Property<int>("ServiceOrderId")
                         .HasColumnType("int");
@@ -291,6 +311,11 @@ namespace CarWorkshopManagementSystem.Data.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CustomerId");
+
+                    b.HasIndex("RegistrationNumber");
+
+                    b.HasIndex("VIN")
+                        .IsUnique();
 
                     b.ToTable("Vehicles");
                 });

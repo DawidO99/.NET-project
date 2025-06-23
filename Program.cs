@@ -4,14 +4,13 @@ using CarWorkshopManagementSystem.Services;
 using CarWorkshopManagementSystem.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection; // Upewnij się, że ten using jest
 using System;
 using Microsoft.Extensions.Logging;
 
 using NLog.Web;
 using NLog;
-using NLog.Extensions.Logging; // Nadal potrzebne dla ILogger, choć NLog do pliku na razie zawieszony
-// using QuestPDF.Infrastructure; // Zakomentowane zgodnie z planem
+using NLog.Extensions.Logging;
 
 namespace CarWorkshopManagementSystem
 {
@@ -19,7 +18,7 @@ namespace CarWorkshopManagementSystem
     {
         public static async Task Main(string[] args)
         {
-            // Konfiguracja NLog przed zbudowaniem hosta, aby przechwycić wczesne logi
+            // Konfiguracja NLog przed zbudowaniem hosta
             var logger = NLog.LogManager.Setup().LoadConfigurationFromFile("NLog.config").GetCurrentClassLogger();
             logger.Debug("Application starting up");
 
@@ -38,8 +37,7 @@ namespace CarWorkshopManagementSystem
                     options.UseSqlServer(connectionString));
                 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
-                // ZMIANA TUTAJ: WYŁĄCZENIE WYMAGANIA POTWIERDZANIA KONTA
-                builder.Services.AddDefaultIdentity<AppUser>(options => options.SignIn.RequireConfirmedAccount = false) // ZMIENIONO: false
+                builder.Services.AddDefaultIdentity<AppUser>(options => options.SignIn.RequireConfirmedAccount = false)
                     .AddRoles<IdentityRole>()
                     .AddEntityFrameworkStores<ApplicationDbContext>();
 
@@ -56,11 +54,8 @@ namespace CarWorkshopManagementSystem
                 builder.Services.AddScoped<ICommentService, CommentService>();
                 builder.Services.AddScoped<IPartService, PartService>();
 
-                // Rejestracja serwisu generującego PDF (zakomentowane zgodnie z planem)
-                // builder.Services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
-
-                // Globalna konfiguracja licencji QuestPDF (Community) (zakomentowane zgodnie z planem)
-                // QuestPDF.Settings.License = LicenseType.Community;
+                // Rejestracja BackgroundService
+                builder.Services.AddHostedService<OpenOrderReportBackgroundService>(); // DODANO: Rejestracja usługi w tle
 
                 var app = builder.Build();
 
