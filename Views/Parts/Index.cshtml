@@ -26,9 +26,9 @@
                 <td>@Html.DisplayFor(modelItem => item.Type)</td>
                 <td>@item.UnitPrice.ToString("C")</td>
                 <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id">Edytuj</a> |
-                    <a asp-action="Details" asp-route-id="@item.Id">Szczegóły</a> |
-                    <a asp-action="Delete" asp-route-id="@item.Id">Usuń</a>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning">Edytuj</a> |
+                    <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Szczegóły</a> |
+                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger">Usuń</a>
                 </td>
             </tr>
         }
