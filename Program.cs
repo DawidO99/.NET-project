@@ -1,100 +1,124 @@
-﻿using CarWorkshopManagementSystem.Data;
+﻿// Program.cs
+using CarWorkshopManagementSystem.Data;
 using CarWorkshopManagementSystem.Services;
-using CarWorkshopManagementSystem.Models; // <<------ DODAJ TEN IMPORT DLA AppUser
-using Microsoft.AspNetCore.Identity; // To już masz, OK
+using CarWorkshopManagementSystem.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection; // Dodaj ten import dla IServiceScope
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using Microsoft.Extensions.Logging;
+
+using NLog.Web;
+using NLog;
+using NLog.Extensions.Logging; // Nadal potrzebne dla ILogger, choć NLog do pliku na razie zawieszony
+// using QuestPDF.Infrastructure; // Zakomentowane zgodnie z planem
 
 namespace CarWorkshopManagementSystem
 {
     public class Program
     {
-        public static async Task Main(string[] args) // <<------ ZMIEŃ NA async Task Main
+        public static async Task Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            // Konfiguracja NLog przed zbudowaniem hosta, aby przechwycić wczesne logi
+            var logger = NLog.LogManager.Setup().LoadConfigurationFromFile("NLog.config").GetCurrentClassLogger();
+            logger.Debug("Application starting up");
 
-            // Add services to the container.
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString));
-            builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
-            // ZMIANA TUTAJ: Używamy naszej własnej klasy AppUser i dodajemy obsługę ról
-            builder.Services.AddDefaultIdentity<AppUser>(options => options.SignIn.RequireConfirmedAccount = true) // <<------ ZMIEŃ IdentityUser NA AppUser
-                .AddRoles<IdentityRole>() // <<------ DODAJ TĄ LINIĘ, ABY WŁĄCZYĆ OBSŁUGĘ RÓL
-                .AddEntityFrameworkStores<ApplicationDbContext>();
-
-            builder.Services.AddControllersWithViews();
-
-            // Dodaj Swagger/OpenAPI (dla dokumentacji API, przydatne w development)
-            builder.Services.AddEndpointsApiExplorer(); // <<------ DODAJ TĄ LINIĘ
-            builder.Services.AddSwaggerGen(); // <<------ DODAJ TĄ LINIĘ
-
-            // Rejestracja serwisów biznesowych
-            builder.Services.AddScoped<ICustomerService, CustomerService>(); // To już masz, OK
-
-            //Rejestracja serwisu pojazdów
-            builder.Services.AddScoped<IVehicleService, VehicleService>();
-
-            // Rejestracja serwisu zleceń serwisowych
-            builder.Services.AddScoped<IServiceOrderService, ServiceOrderService>();
-
-            // Rejestracja serwisu zadań serwisowych
-            builder.Services.AddScoped<IServiceTaskService, ServiceTaskService>();
-
-            // Rejestracja serwisu Komentarzy
-            builder.Services.AddScoped<ICommentService, CommentService>();
-
-            // Rejestracja serwisu części
-            builder.Services.AddScoped<IPartService, PartService>();
-
-            var app = builder.Build();
-
-            // **********************************************
-            // DODANIE SEEDINGU RÓL I UŻYTKOWNIKA ADMINA
-            // Ten blok kodu powinien być ZARAZ PO app.Build(), a przed Configure the HTTP request pipeline.
-            using (var scope = app.Services.CreateScope())
+            try
             {
-                var serviceProvider = scope.ServiceProvider;
-                try
+                var builder = WebApplication.CreateBuilder(args);
+
+                // Konfiguracja logowania ASP.NET Core do używania NLog
+                builder.Logging.ClearProviders();
+                builder.Logging.SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Trace);
+                builder.Host.UseNLog();
+
+                // Add services to the container.
+                var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+                builder.Services.AddDbContext<ApplicationDbContext>(options =>
+                    options.UseSqlServer(connectionString));
+                builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+
+                // ZMIANA TUTAJ: WYŁĄCZENIE WYMAGANIA POTWIERDZANIA KONTA
+                builder.Services.AddDefaultIdentity<AppUser>(options => options.SignIn.RequireConfirmedAccount = false) // ZMIENIONO: false
+                    .AddRoles<IdentityRole>()
+                    .AddEntityFrameworkStores<ApplicationDbContext>();
+
+                builder.Services.AddControllersWithViews();
+
+                builder.Services.AddEndpointsApiExplorer();
+                builder.Services.AddSwaggerGen();
+
+                // Rejestracja serwisów biznesowych
+                builder.Services.AddScoped<ICustomerService, CustomerService>();
+                builder.Services.AddScoped<IVehicleService, VehicleService>();
+                builder.Services.AddScoped<IServiceOrderService, ServiceOrderService>();
+                builder.Services.AddScoped<IServiceTaskService, ServiceTaskService>();
+                builder.Services.AddScoped<ICommentService, CommentService>();
+                builder.Services.AddScoped<IPartService, PartService>();
+
+                // Rejestracja serwisu generującego PDF (zakomentowane zgodnie z planem)
+                // builder.Services.AddScoped<IPdfGeneratorService, PdfGeneratorService>();
+
+                // Globalna konfiguracja licencji QuestPDF (Community) (zakomentowane zgodnie z planem)
+                // QuestPDF.Settings.License = LicenseType.Community;
+
+                var app = builder.Build();
+
+                // **********************************************
+                // DODANIE SEEDINGU RÓL I UŻYTKOWNIKA ADMINA
+                using (var scope = app.Services.CreateScope())
                 {
-                    await DataSeeder.SeedRolesAndAdminUser(serviceProvider);
+                    var serviceProvider = scope.ServiceProvider;
+                    try
+                    {
+                        var context = serviceProvider.GetRequiredService<ApplicationDbContext>();
+                        await context.Database.MigrateAsync();
+                        await DataSeeder.SeedRolesAndAdminUser(serviceProvider);
+                    }
+                    catch (Exception ex)
+                    {
+                        var serviceLogger = serviceProvider.GetRequiredService<ILogger<Program>>();
+                        serviceLogger.LogError(ex, "An error occurred while seeding the database or applying migrations.");
+                    }
                 }
-                catch (Exception ex)
+                // **********************************************
+
+                // Configure the HTTP request pipeline.
+                if (app.Environment.IsDevelopment())
                 {
-                    var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
-                    logger.LogError(ex, "An error occurred while seeding the database.");
+                    app.UseMigrationsEndPoint();
+                    app.UseSwagger();
+                    app.UseSwaggerUI();
                 }
-            }
-            // **********************************************
+                else
+                {
+                    app.UseExceptionHandler("/Home/Error");
+                    app.UseHsts();
+                }
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+                app.UseHttpsRedirection();
+                app.UseStaticFiles();
+
+                app.UseRouting();
+
+                app.UseAuthorization();
+
+                app.MapControllerRoute(
+                    name: "default",
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
+                app.MapRazorPages();
+
+                app.Run();
+            }
+            catch (Exception ex)
             {
-                app.UseMigrationsEndPoint();
-                app.UseSwagger(); 
-                app.UseSwaggerUI(); 
+                logger.Error(ex, "Stopped program because of exception");
+                throw;
             }
-            else
+            finally
             {
-                app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-                app.UseHsts();
+                NLog.LogManager.Shutdown();
             }
-
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-
-            app.UseRouting();
-
-            app.UseAuthorization();
-
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
-            app.MapRazorPages();
-
-            app.Run();
         }
     }
 }

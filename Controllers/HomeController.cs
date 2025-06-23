@@ -15,6 +15,10 @@ namespace CarWorkshopManagementSystem.Controllers
 
         public IActionResult Index()
         {
+            _logger.LogTrace("DIAGNOSTYKA NLOG: Strona g³ówna za³adowana. To jest wiadomoœæ TRACE."); // DODAJ T¥ LINIÊ
+            _logger.LogInformation("DIAGNOSTYKA NLOG: Strona g³ówna za³adowana. To jest wiadomoœæ INFORMATION."); // DODAJ T¥ LINIÊ
+            _logger.LogError(new Exception("To jest testowy wyj¹tek NLOG."), "DIAGNOSTYKA NLOG: Wyst¹pi³ testowy b³¹d na stronie g³ównej."); // DODAJ T¥ LINIÊ
+
             return View();
         }
 
