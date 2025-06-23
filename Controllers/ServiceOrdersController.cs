@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic; // Dodaj to, jeśli jeszcze nie masz
 using System.Reflection; // DODANO: Wymagane dla GetCustomAttribute
+using static CarWorkshopManagementSystem.Services.EnumExtensions;
 
 namespace CarWorkshopManagementSystem.Controllers
 {

@@ -121,7 +121,7 @@ namespace CarWorkshopManagementSystem.Data.Migrations
 
                     b.HasIndex("OrderId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("CarWorkshopManagementSystem.Models.Customer", b =>
@@ -143,7 +143,7 @@ namespace CarWorkshopManagementSystem.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("CarWorkshopManagementSystem.Models.Part", b =>
@@ -166,7 +166,7 @@ namespace CarWorkshopManagementSystem.Data.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Parts");
+                    b.ToTable("Parts", (string)null);
                 });
 
             modelBuilder.Entity("CarWorkshopManagementSystem.Models.ServiceOrder", b =>
@@ -180,24 +180,16 @@ namespace CarWorkshopManagementSystem.Data.Migrations
                     b.Property<string>("AssignedMechanicId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime?>("CompletionDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<DateTime>("CreationDate")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("rowversion");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("VehicleId")
                         .HasColumnType("int");
@@ -208,7 +200,7 @@ namespace CarWorkshopManagementSystem.Data.Migrations
 
                     b.HasIndex("VehicleId");
 
-                    b.ToTable("ServiceOrders");
+                    b.ToTable("ServiceOrders", (string)null);
                 });
 
             modelBuilder.Entity("CarWorkshopManagementSystem.Models.ServiceTask", b =>
@@ -233,7 +225,7 @@ namespace CarWorkshopManagementSystem.Data.Migrations
 
                     b.HasIndex("ServiceOrderId");
 
-                    b.ToTable("ServiceTasks");
+                    b.ToTable("ServiceTasks", (string)null);
                 });
 
             modelBuilder.Entity("CarWorkshopManagementSystem.Models.UsedPart", b =>
@@ -259,7 +251,7 @@ namespace CarWorkshopManagementSystem.Data.Migrations
 
                     b.HasIndex("ServiceTaskId");
 
-                    b.ToTable("UsedParts");
+                    b.ToTable("UsedParts", (string)null);
                 });
 
             modelBuilder.Entity("CarWorkshopManagementSystem.Models.Vehicle", b =>
@@ -303,7 +295,7 @@ namespace CarWorkshopManagementSystem.Data.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Vehicles");
+                    b.ToTable("Vehicles", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

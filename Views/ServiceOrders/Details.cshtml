@@ -52,13 +52,23 @@
                     @if (Model.Status == ServiceOrderStatus.Completed && Model.CompletionDate.HasValue)
                     {
                         <br />
-
-                        <small class="text-muted">(Zakończono: @Model.CompletionDate.Value.ToLocalTime().ToString("g"))</small> @* DODANO: Wyświetlanie daty zakończenia *@
+                        <small class="text-muted">(Zakończono: @Model.CompletionDate.Value.ToLocalTime().ToString("g"))</small>
+     @* DODANO: Wyświetlanie daty zakończenia *@
                     }
                 </dd>
 
                 <dt class="col-sm-4">Mechanik</dt>
                 <dd class="col-sm-8">@(Model.AssignedMechanic?.UserName ?? "Nieprzypisany")</dd>
+
+                @* DODANO: Wyświetlanie sum kosztów *@
+                <dt class="col-sm-4 font-weight-bold">Koszt robocizny</dt>
+                <dd class="col-sm-8 font-weight-bold">@Model.TotalLaborCost.ToString("C")</dd>
+
+                <dt class="col-sm-4 font-weight-bold">Koszt części</dt>
+                <dd class="col-sm-8 font-weight-bold">@Model.TotalPartsCost.ToString("C")</dd>
+
+                <dt class="col-sm-4 font-weight-bold border-top pt-2">Całkowity koszt</dt>
+                <dd class="col-sm-8 font-weight-bold border-top pt-2">@Model.TotalOrderCost.ToString("C")</dd>
             </dl>
         </div>
         <div class="col-md-6">
@@ -86,7 +96,6 @@
                                     bool isDisabled = (Model.Status == ServiceOrderStatus.Completed || Model.Status == ServiceOrderStatus.Canceled);
                                 }
                                 <select name="newStatus" class="form-control" asp-items="ViewBag.Statuses" disabled="@isDisabled">
-                                    @* POPRAWIONO: Sposób ustawiania disabled *@
                                     @* Opcje będą automatycznie wygenerowane przez asp-items *@
                                 </select>
                             </div>
@@ -286,10 +295,10 @@
                 let partOptionsHtml = '<option value="">-- Wybierz część --</option>';
         @if (ViewBag.Parts != null)
         {
-            foreach (var item in (List<SelectListItem>)ViewBag.Parts)
-            {
-                @:partOptionsHtml += `<option value="@item.Value">@Html.Raw(item.Text.Replace("`", "\\`"))</option>`;
-            }
+                foreach (var item in (List<SelectListItem>)ViewBag.Parts)
+                {
+                        @:partOptionsHtml += `<option value="@item.Value">@Html.Raw(item.Text.Replace("`", "\\`"))</option>`;
+                }
         }
 
                 newPartRow.innerHTML = `

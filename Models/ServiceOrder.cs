@@ -2,7 +2,8 @@
 using System.Collections.Generic;
 using System;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema; // DODANO: Dla [Timestamp]
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq; // DODANO: Potrzebne dla metod LINQ (Sum)
 
 namespace CarWorkshopManagementSystem.Models
 {
@@ -28,29 +29,39 @@ namespace CarWorkshopManagementSystem.Models
         public ServiceOrderStatus Status { get; set; } = ServiceOrderStatus.New;
 
         [Required(ErrorMessage = "Opis problemu jest wymagany.")]
-        [StringLength(1000, ErrorMessage = "Opis problemu nie może przekraczać 1000 znaków.")] // DODANO: Ograniczenie długości
+        [StringLength(1000, ErrorMessage = "Opis problemu nie może przekraczać 1000 znaków.")]
         public string Description { get; set; } = string.Empty;
 
-        public DateTime CreationDate { get; set; } = DateTime.UtcNow; // ZMIENIONO: Z DateTime.Now na DateTime.UtcNow
+        public DateTime CreationDate { get; set; } = DateTime.UtcNow;
 
-        public DateTime? CompletionDate { get; set; } // DODANO: Pole na datę zakończenia zlecenia (nullowalne)
+        public DateTime? CompletionDate { get; set; }
 
         public string? AssignedMechanicId { get; set; }
         public AppUser? AssignedMechanic { get; set; }
 
-        [Required(ErrorMessage = "Pojazd jest wymagany.")] // DODANO: Walidacja dla VehicleId
+        [Required(ErrorMessage = "Pojazd jest wymagany.")]
         public int VehicleId { get; set; }
 
-        // [ValidateNever] // Przeniesiono do kontrolera lub ApplicationDbContext, jeśli konieczne jest pominięcie walidacji.
-        // Tutaj w modelu można by dodać, jeśli walidator będzie próbował walidować obiekt Vehicle.
-        // Zwykle, jeśli VehicleId jest wymagane, Vehicle też będzie implicitnie wymagane przez relację,
-        // chyba że używasz DTO lub ręcznie usuwasz z ModelState w kontrolerze.
         public Vehicle Vehicle { get; set; } = null!;
 
         public ICollection<ServiceTask> Tasks { get; set; } = new List<ServiceTask>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
-        [Timestamp] // DODANO: Optymistyczna kontrola współbieżności
+        [Timestamp]
         public byte[]? RowVersion { get; set; }
+
+        // DODANO: Właściwości obliczeniowe dla kosztów zlecenia
+        [NotMapped] // Ważne: ta właściwość nie będzie mapowana do kolumny w bazie danych
+        [Display(Name = "Całkowity koszt robocizny")]
+        public decimal TotalLaborCost => Tasks.Sum(t => t.LaborCost);
+
+        [NotMapped] // Ważne: ta właściwość nie będzie mapowana do kolumny w bazie danych
+        [Display(Name = "Całkowity koszt części")]
+        public decimal TotalPartsCost => Tasks.Sum(t => t.UsedParts.Sum(up => up.Quantity * up.Part.UnitPrice));
+        // UWAGA: Ta właściwość wymaga, aby UsedParts i Part były załadowane (przez Include/ThenInclude)
+
+        [NotMapped] // Ważne: ta właściwość nie będzie mapowana do kolumny w bazie danych
+        [Display(Name = "Całkowity koszt zlecenia")]
+        public decimal TotalOrderCost => TotalLaborCost + TotalPartsCost;
     }
 }
