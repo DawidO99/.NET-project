@@ -1,0 +1,27 @@
+﻿name: .NET Core CI
+
+on:
+  push:
+    branches: [ master ] # Lub 'main' jeśli to Twoja główna gałąź
+  pull_request:
+    branches: [ master ] # Lub 'main'
+
+jobs:
+  build:
+    runs-on: windows-latest # Użyj najnowszego Windowsa, bo często pracujesz na Windowsie i SQL Serverze
+
+    steps:
+    - uses: actions/checkout@v4 # Klonuje repozytorium
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 8.0.x # Upewnij się, że to odpowiada wersji .NET, której używasz (sprawdź w .csproj lub Program.cs)
+
+    - name: Restore dependencies
+      run: dotnet restore # Przywraca pakiety NuGet
+
+    - name: Build
+      run: dotnet build --no-restore # Buduje projekt
+
+    - name: Test
+      run: dotnet test --no-build --verbosity normal # Uruchamia testy jednostkowe (jeśli są)
