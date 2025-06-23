@@ -1,0 +1,70 @@
+﻿@model CarWorkshopManagementSystem.Models.ServiceOrder
+@using static CarWorkshopManagementSystem.Controllers.EnumExtensions // Dla GetDisplayName()
+
+@{
+    ViewData["Title"] = "Usuń zlecenie #" + Model.Id;
+}
+
+<h1>Usuń zlecenie #@Model.Id</h1>
+
+<h3>Czy na pewno chcesz usunąć to zlecenie?</h3>
+<p class="text-danger">Pamiętaj, że usunięcie zlecenia spowoduje również usunięcie wszystkich powiązanych czynności serwisowych i użytych części!</p>
+<hr />
+<div>
+    <h4>Informacje o zleceniu</h4>
+    <dl class="row">
+        <dt class="col-sm-3">
+            Pojazd
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Vehicle.Brand @Model.Vehicle.Model (@Model.Vehicle.RegistrationNumber)
+        </dd>
+        <dt class="col-sm-3">
+            Klient
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Vehicle.Customer.FullName
+        </dd>
+        <dt class="col-sm-3">
+            Opis problemu
+        </dt>
+        <dd class="col-sm-9">
+            @Html.DisplayFor(model => model.Description)
+        </dd>
+        <dt class="col-sm-3">
+            Status
+        </dt>
+        <dd class="col-sm-9">
+            @Model.Status.GetDisplayName()
+        </dd>
+        <dt class="col-sm-3">
+            Data utworzenia
+        </dt>
+        <dd class="col-sm-9">
+            @Model.CreationDate.ToLocalTime().ToString("g")
+        </dd>
+        @if (Model.CompletionDate.HasValue)
+        {
+            <dt class="col-sm-3">
+                Data zakończenia
+            </dt>
+            <dd class="col-sm-9">
+                @Model.CompletionDate.Value.ToLocalTime().ToString("g")
+            </dd>
+        }
+        <dt class="col-sm-3">
+            Mechanik
+        </dt>
+        <dd class="col-sm-9">
+            @(Model.AssignedMechanic?.UserName ?? "Nieprzypisany")
+        </dd>
+    </dl>
+
+    <form asp-action="Delete" method="post">
+        @Html.AntiForgeryToken() @* WAŻNE DLA BEZPIECZEŃSTWA *@
+        <input type="hidden" asp-for="Id" />
+        <input type="submit" value="Usuń" class="btn btn-danger" /> |
+        <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Anuluj</a>
+        <a asp-action="Index" class="btn btn-info">Powrót do listy</a>
+    </form>
+</div>

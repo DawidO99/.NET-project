@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CarWorkshopManagementSystem.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250622181212_AddCompletionDateAndRowVersionToServiceOrder")]
-    partial class AddCompletionDateAndRowVersionToServiceOrder
+    [Migration("20250623025159_FinalDatabaseSetup")]
+    partial class FinalDatabaseSetup
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

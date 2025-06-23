@@ -1,4 +1,7 @@
 ﻿@model IEnumerable<CarWorkshopManagementSystem.Models.ServiceOrder>
+@using CarWorkshopManagementSystem.Models
+@using static CarWorkshopManagementSystem.Controllers.EnumExtensions // DODANO: Aby używać GetDisplayName()
+@inject Microsoft.AspNetCore.Identity.UserManager<AppUser> UserManager // DODANO: Potrzebne do sprawdzenia ról
 
 @{
     ViewData["Title"] = "Zlecenia serwisowe";
@@ -6,34 +9,94 @@
 
 <h1>@ViewData["Title"]</h1>
 
+@* Wyświetlanie komunikatów z TempData *@
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
 <p>
     <a asp-action="Create" class="btn btn-primary">Dodaj nowe zlecenie</a>
 </p>
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Pojazd</th>
-            <th>Klient</th>
-            <th>Opis problemu</th>
-            <th>Status</th>
-            <th>Mechanik</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
+@if (Model != null && Model.Any())
+{
+    <table class="table">
+        <thead>
             <tr>
-                <td>@item.Vehicle.Brand @item.Vehicle.Model</td>
-                <td>@item.Vehicle.Customer.FullName</td>
-                <td>@Html.DisplayFor(modelItem => item.Description)</td>
-                <td>@Html.DisplayFor(modelItem => item.Status)</td>
-                <td>@item.AssignedMechanic?.UserName</td>
-                <td>
-                    <a asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
-                </td>
+                <th>Pojazd</th>
+                <th>Klient</th>
+                <th>Opis problemu</th>
+                <th>Status</th>
+                <th>Mechanik</th>
+                <th>Akcje</th> @* DODANO: Nagłówek dla kolumny akcji *@
             </tr>
-        }
-    </tbody>
-</table>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.Vehicle.Brand @item.Vehicle.Model</td>
+                    <td>@item.Vehicle.Customer.FullName</td>
+                    <td>@Html.DisplayFor(modelItem => item.Description)</td>
+                    <td>
+                        @item.Status.GetDisplayName() @* DODANO: Wyświetlanie nazwy displayowej statusu *@
+                        @if (item.Status == ServiceOrderStatus.Completed && item.CompletionDate.HasValue)
+                        {
+                            <br />
+                
+                            <small class="text-muted">(Zakończono: @item.CompletionDate.Value.ToLocalTime().ToString("g"))</small>
+                        }
+                    </td>
+                    <td>@(item.AssignedMechanic?.UserName ?? "Nieprzypisany")</td> @* DODANO: Obsługa null mechanika *@
+                    <td>
+                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-info">Szczegóły</a>
+
+                        @* Linki do edycji i usuwania, widoczne tylko dla Admin/Recepcjonista *@
+                        @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("Recepcjonista")))
+                        {
+                            <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-warning ms-1">Edytuj</a>
+                            <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-danger ms-1">Usuń</a>
+                        }
+
+                        @* Formularz do szybkiej zmiany statusu, widoczny tylko dla Admin/Mechanik i jeśli zlecenie nie jest zakończone/anulowane *@
+                        @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("Mechanik")))
+                        {
+                            @if (item.Status != ServiceOrderStatus.Completed && item.Status != ServiceOrderStatus.Canceled)
+                            {
+                                <form asp-controller="ServiceOrders" asp-action="ChangeStatus" method="post" class="d-inline ms-1">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="orderId" value="@item.Id" />
+                                    <select name="newStatus" class="form-select form-select-sm d-inline-block w-auto" onchange="this.form.submit()">
+                                        <option value="">Zmień status</option>
+                                        @foreach (var status in Enum.GetValues(typeof(ServiceOrderStatus)).Cast<ServiceOrderStatus>())
+                                        {
+                                            @if (status != item.Status && status != ServiceOrderStatus.New) // Nie wyświetlaj obecnego statusu i 'New' jako opcji zmiany
+                                            {
+                                                <option value="@((int)status)">@status.GetDisplayName()</option>
+                                            }
+                                        }
+                                    </select>
+                                </form>
+                            }
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>Brak zleceń serwisowych w systemie. <a asp-action="Create">Dodaj pierwsze zlecenie!</a></p>
+}

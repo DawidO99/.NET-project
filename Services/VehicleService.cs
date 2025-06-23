@@ -16,14 +16,14 @@ namespace CarWorkshopManagementSystem.Services
     public class VehicleService : IVehicleService
     {
         private readonly ApplicationDbContext _context;
-        private readonly ILogger<VehicleService> _logger; // DODANO
-        private readonly IWebHostEnvironment _webHostEnvironment; // DODANO
+        private readonly ILogger<VehicleService> _logger;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public VehicleService(ApplicationDbContext context, ILogger<VehicleService> logger, IWebHostEnvironment webHostEnvironment) // ZMODYFIKOWANO
+        public VehicleService(ApplicationDbContext context, ILogger<VehicleService> logger, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
-            _logger = logger; // Zainicjowanie loggera
-            _webHostEnvironment = webHostEnvironment; // Zainicjowanie środowiska hostingu
+            _logger = logger;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         public async Task<IEnumerable<Vehicle>> GetAllVehiclesAsync()
@@ -68,17 +68,22 @@ namespace CarWorkshopManagementSystem.Services
             }
         }
 
-        public async Task CreateVehicleAsync(Vehicle vehicle, IFormFile? imageFile) // ZMODYFIKOWANO
+        public async Task CreateVehicleAsync(Vehicle vehicle, IFormFile? imageFile)
         {
             try
             {
+                // Krok 1: Sprawdź i zapisz plik, jeśli istnieje
                 if (imageFile != null)
                 {
+                    // Ustaw ImageUrl PRZED dodaniem do kontekstu, jeśli ID jest generowane przez bazę,
+                    // to przy pierwszym SaveChanges() ImageUrl zostanie zapisany.
                     vehicle.ImageUrl = await SaveImageAsync(imageFile);
                 }
 
+                // Krok 2: Dodaj pojazd do kontekstu (teraz już z ImageUrl, jeśli było)
                 _context.Vehicles.Add(vehicle);
-                await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync(); // Zapisz wszystko w jednej transakcji
+
                 _logger.LogInformation("Dodano nowy pojazd {Brand} {Model} (ID: {VehicleId}).", vehicle.Brand, vehicle.Model, vehicle.Id);
             }
             catch (Exception ex)
@@ -89,15 +94,15 @@ namespace CarWorkshopManagementSystem.Services
                 {
                     DeleteImageFile(vehicle.ImageUrl);
                 }
-                throw;
+                throw; // Przekaż wyjątek dalej, aby kontroler mógł go obsłużyć
             }
         }
 
-        public async Task UpdateVehicleAsync(Vehicle vehicle, IFormFile? newImageFile, bool removeCurrentImage) // ZMODYFIKOWANO
+        public async Task UpdateVehicleAsync(Vehicle vehicle, IFormFile? newImageFile, bool removeCurrentImage)
         {
             try
             {
-                // Pobieramy istniejący pojazd, aby Entity Framework Core zaczął go śledzić
+                // Pobieramy istniejący pojazd. FindAsync() śledzi ten obiekt.
                 var existingVehicle = await _context.Vehicles.FindAsync(vehicle.Id);
                 if (existingVehicle == null)
                 {
@@ -105,50 +110,50 @@ namespace CarWorkshopManagementSystem.Services
                     throw new KeyNotFoundException($"Pojazd o ID {vehicle.Id} nie został znaleziony.");
                 }
 
+                string? currentDbImageUrl = existingVehicle.ImageUrl; // Pobierz aktualny URL z DB
+
                 // Logika usuwania starego zdjęcia
-                if (removeCurrentImage && !string.IsNullOrEmpty(existingVehicle.ImageUrl))
+                if (removeCurrentImage)
                 {
-                    DeleteImageFile(existingVehicle.ImageUrl);
-                    existingVehicle.ImageUrl = null; // Ustaw URL na null, jeśli zdjęcie zostało usunięte
+                    if (!string.IsNullOrEmpty(currentDbImageUrl))
+                    {
+                        DeleteImageFile(currentDbImageUrl);
+                    }
+                    existingVehicle.ImageUrl = null; // Ustaw na null na śledzonym obiekcie
+                    _logger.LogInformation("Usunięto istniejące zdjęcie dla pojazdu ID {VehicleId}.", vehicle.Id);
                 }
 
                 // Logika dodawania/aktualizacji nowego zdjęcia
                 if (newImageFile != null)
                 {
-                    // Jeśli jest nowe zdjęcie, usuń stare (chyba że już zostało usunięte flagą removeCurrentImage)
-                    if (!string.IsNullOrEmpty(existingVehicle.ImageUrl) && !removeCurrentImage)
+                    // Jeśli jest nowe zdjęcie, usuń stare, jeśli istniało i nie zostało już usunięte
+                    if (!string.IsNullOrEmpty(currentDbImageUrl) && !removeCurrentImage)
                     {
-                        DeleteImageFile(existingVehicle.ImageUrl);
+                        DeleteImageFile(currentDbImageUrl);
+                        _logger.LogInformation("Zastąpiono stare zdjęcie dla pojazdu ID {VehicleId}.", vehicle.Id);
                     }
-                    existingVehicle.ImageUrl = await SaveImageAsync(newImageFile);
+                    existingVehicle.ImageUrl = await SaveImageAsync(newImageFile); // Zapisz nowy plik i ustaw URL na śledzonym obiekcie
+                    _logger.LogInformation("Zapisano nowe zdjęcie dla pojazdu ID {VehicleId}: {ImageUrl}.", vehicle.Id, existingVehicle.ImageUrl);
                 }
-                else if (string.IsNullOrEmpty(vehicle.ImageUrl) && !removeCurrentImage)
-                {
-                    // Jeśli ImageUrl z formularza jest pusty, a nie było flagi usuwania (np. użytkownik usunął URL ręcznie)
-                    // i jest jakieś zdjęcie, to je usuń.
-                    if (!string.IsNullOrEmpty(existingVehicle.ImageUrl))
-                    {
-                        DeleteImageFile(existingVehicle.ImageUrl);
-                        existingVehicle.ImageUrl = null;
-                    }
-                }
-                // Jeśli imageFile jest null, a removeCurrentImage false, i vehicle.ImageUrl jest pusty,
-                // oznacza to, że użytkownik nie chce zmieniać zdjęcia i zostawił je puste,
-                // więc istniejący URL powinien pozostać taki, jaki był przed edycją.
-                // Logika powyżej to już obsłużyła lub zachowa istniejący URL, jeśli nie było nowego pliku ani flagi usuwania.
+                // Jeśli newImageFile jest null i removeCurrentImage jest false,
+                // istniejący existingVehicle.ImageUrl pozostaje bez zmian (czyli tak jak currentDbImageUrl).
 
 
-                // Aktualizuj pozostałe pola pojazdu ręcznie (aby nie nadpisywać ImageUrl, który już obsłużyliśmy)
+                // Kopiowanie pozostałych właściwości z obiektu `vehicle` (z formularza)
+                // do śledzonego obiektu `existingVehicle`.
+                // EF Core automatycznie wykryje zmiany we właściwościach `existingVehicle`.
                 existingVehicle.Brand = vehicle.Brand;
                 existingVehicle.Model = vehicle.Model;
                 existingVehicle.VIN = vehicle.VIN;
                 existingVehicle.RegistrationNumber = vehicle.RegistrationNumber;
                 existingVehicle.Year = vehicle.Year;
                 existingVehicle.CustomerId = vehicle.CustomerId;
-                // existingVehicle.ImageUrl = vehicle.ImageUrl; // NIE AKTUALIZUJ TEGO TUTAJ, JUŻ TO OBSŁUŻYLIŚMY
 
-                _context.Entry(existingVehicle).State = EntityState.Modified; // Oznacz jako zmodyfikowany
-                await _context.SaveChangesAsync();
+                // Nie ma potrzeby jawnie ustawiać .State = Modified; dla całego obiektu,
+                // ani .Property(v => v.ImageUrl).IsModified = true;
+                // ponieważ existingVehicle jest śledzony przez FindAsync, a jego properties zostały zmienione.
+
+                await _context.SaveChangesAsync(); // Zapisz wszystkie wykryte zmiany
                 _logger.LogInformation("Zaktualizowano pojazd {Brand} {Model} (ID: {VehicleId}).", vehicle.Brand, vehicle.Model, vehicle.Id);
             }
             catch (DbUpdateConcurrencyException ex)
@@ -170,7 +175,6 @@ namespace CarWorkshopManagementSystem.Services
                 var vehicle = await _context.Vehicles.FindAsync(id);
                 if (vehicle != null)
                 {
-                    // Usuń zdjęcie pojazdu, jeśli istnieje
                     if (!string.IsNullOrEmpty(vehicle.ImageUrl))
                     {
                         DeleteImageFile(vehicle.ImageUrl);
@@ -188,12 +192,11 @@ namespace CarWorkshopManagementSystem.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Błąd podczas usuwania pojazdu o ID: {VehicleId}.", id);
+                _logger.LogError(ex, "Błąd podczas usuwania pojazdu o ID {VehicleId}.", id);
                 throw;
             }
         }
 
-        // Metoda pomocnicza do zapisywania plików obrazów
         private async Task<string> SaveImageAsync(IFormFile imageFile)
         {
             var uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads");
@@ -210,15 +213,13 @@ namespace CarWorkshopManagementSystem.Services
                 await imageFile.CopyToAsync(fileStream);
             }
 
-            return "/uploads/" + uniqueFileName; // Zwróć ścieżkę względną do zapisania w bazie danych
+            return "/uploads/" + uniqueFileName;
         }
 
-        // Metoda pomocnicza do usuwania plików obrazów
         private void DeleteImageFile(string? imageUrl)
         {
             if (string.IsNullOrEmpty(imageUrl)) return;
 
-            // Sprawdź, czy ścieżka zaczyna się od "/uploads/"
             if (imageUrl.StartsWith("/uploads/"))
             {
                 var fileName = imageUrl.Substring("/uploads/".Length);
@@ -234,7 +235,6 @@ namespace CarWorkshopManagementSystem.Services
                     catch (Exception ex)
                     {
                         _logger.LogError(ex, "Błąd podczas usuwania pliku obrazu: {FilePath}", filePath);
-                        // Możesz zdecydować, czy rzucić wyjątek, czy tylko zalogować
                     }
                 }
                 else

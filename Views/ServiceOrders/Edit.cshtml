@@ -1,0 +1,62 @@
+﻿@model CarWorkshopManagementSystem.Models.ServiceOrder
+@using System.Linq // Dla Cast<>() i Any()
+@using static CarWorkshopManagementSystem.Controllers.EnumExtensions // Dla GetDisplayName()
+
+@{
+    ViewData["Title"] = "Edytuj zlecenie #" + Model.Id;
+}
+
+<h1>Edytuj zlecenie #@Model.Id</h1>
+
+<h4>Informacje o zleceniu</h4>
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Edit" method="post">
+            @Html.AntiForgeryToken() @* WAŻNE DLA BEZPIECZEŃSTWA *@
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" />
+            <input type="hidden" asp-for="CreationDate" /> @* Ukryte pole dla CreationDate, aby zachować wartość *@
+            <input type="hidden" asp-for="CompletionDate" /> @* Ukryte pole dla CompletionDate, aby zachować wartość *@
+            <input type="hidden" asp-for="RowVersion" /> @* Ukryte pole dla RowVersion, ważne dla optymistycznej współbieżności *@
+
+            <div class="form-group mb-3">
+                <label asp-for="VehicleId" class="control-label">Pojazd</label>
+                <select asp-for="VehicleId" class="form-control" asp-items="ViewBag.Vehicles"></select>
+                <span asp-validation-for="VehicleId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Description" class="control-label">Opis problemu</label>
+                <textarea asp-for="Description" class="form-control" rows="5"></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="AssignedMechanicId" class="control-label">Przypisany mechanik</label>
+                <select asp-for="AssignedMechanicId" class="form-control" asp-items="ViewBag.Mechanics">
+                    <option value="">-- Nieprzypisany --</option>
+                </select>
+                <span asp-validation-for="AssignedMechanicId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mb-3">
+                <label asp-for="Status" class="control-label">Status</label>
+                <select asp-for="Status" class="form-control" asp-items="ViewBag.Statuses"></select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mt-3">
+                <input type="submit" value="Zapisz zmiany" class="btn btn-primary" />
+                <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Anuluj</a>
+                <a asp-action="Index" class="btn btn-info">Powrót do listy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

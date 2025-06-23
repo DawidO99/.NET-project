@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace CarWorkshopManagementSystem.Data.Migrations
 {
     /// <inheritdoc />
-    public partial class AddCompletionDateAndRowVersionToServiceOrder : Migration
+    public partial class FinalDatabaseSetup : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -28,32 +28,35 @@ namespace CarWorkshopManagementSystem.Data.Migrations
                 oldClrType: typeof(string),
                 oldType: "nvarchar(max)");
 
-            migrationBuilder.AddColumn<DateTime>(
-                name: "CompletionDate",
-                table: "ServiceOrders",
-                type: "datetime2",
-                nullable: true);
+            // USUNIĘTO TĄ LINIĘ, PONIEWAŻ KOLUMNA 'CompletionDate' JUŻ ISTNIEJE W BAZIE DANYCH
+            // migrationBuilder.AddColumn<DateTime>(
+            //     name: "CompletionDate",
+            //     table: "ServiceOrders",
+            //     type: "datetime2",
+            //     nullable: true);
 
             migrationBuilder.AddColumn<byte[]>(
                 name: "RowVersion",
                 table: "ServiceOrders",
-                type: "rowversion",
+                type: "rowversion", // To jest prawidłowy typ dla SQL Server dla Timestamp
                 rowVersion: true,
-                nullable: true);
+                nullable: true); // Powinno być nullable, bo to nie Primary Key i jest to timestamp
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
+        protected override void Down(MigrationBuilder routerBuilder) // Zmieniono nazwę parametru, aby uniknąć konfliktu
         {
-            migrationBuilder.DropColumn(
-                name: "CompletionDate",
-                table: "ServiceOrders");
-
-            migrationBuilder.DropColumn(
+            // Pamiętaj, że w Down() również musisz obsłużyć usunięcie kolumny RowVersion
+            routerBuilder.DropColumn(
                 name: "RowVersion",
                 table: "ServiceOrders");
 
-            migrationBuilder.AlterColumn<string>(
+            // W Down() przywracasz poprzedni stan, więc jeśli CompletionDate było dodane wcześniej,
+            // to w tej Down() go nie usuwasz, bo go nie dodałeś w Up().
+            // Jeśli jednak chcesz, żeby to Down() było kompleksowe, musiałbyś tam uwzględnić.
+            // Dla naszych celów skupiamy się na Up().
+
+            routerBuilder.AlterColumn<string>(
                 name: "Status",
                 table: "ServiceOrders",
                 type: "nvarchar(max)",
@@ -61,7 +64,7 @@ namespace CarWorkshopManagementSystem.Data.Migrations
                 oldClrType: typeof(int),
                 oldType: "int");
 
-            migrationBuilder.AlterColumn<string>(
+            routerBuilder.AlterColumn<string>(
                 name: "Description",
                 table: "ServiceOrders",
                 type: "nvarchar(max)",

@@ -86,7 +86,8 @@ namespace CarWorkshopManagementSystem.Controllers
         // POST: Vehicles/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("Brand,Model,VIN,RegistrationNumber,Year,CustomerId")] Vehicle vehicle, [FromForm] IFormFile? imageFile)
+        // ZMODYFIKOWANO: Nazwa parametru IFormFile zmieniona na ImageFile (tak jak w modelu)
+        public async Task<IActionResult> Create([Bind("Brand,Model,VIN,RegistrationNumber,Year,CustomerId")] Vehicle vehicle, [FromForm] IFormFile? ImageFile) // ZMIANA
         {
             // ModelState.Remove("Customer"); // W modelu Vehicle.cs dodano [ValidateNever] dla Customer, więc ta linia powinna być zbędna.
 
@@ -94,7 +95,7 @@ namespace CarWorkshopManagementSystem.Controllers
             {
                 try
                 {
-                    await _vehicleService.CreateVehicleAsync(vehicle, imageFile);
+                    await _vehicleService.CreateVehicleAsync(vehicle, ImageFile); // ZMIANA: Przekazujemy ImageFile
                     _logger.LogInformation("Utworzono nowy pojazd: {Brand} {Model} (ID: {VehicleId}).", vehicle.Brand, vehicle.Model, vehicle.Id);
                     TempData["SuccessMessage"] = "Pojazd został pomyślnie dodany.";
                     return RedirectToAction(nameof(Index));
@@ -150,7 +151,8 @@ namespace CarWorkshopManagementSystem.Controllers
         // POST: Vehicles/Edit/{id}
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,Brand,Model,VIN,RegistrationNumber,Year,CustomerId")] Vehicle vehicle, [FromForm] IFormFile? newImageFile, [FromForm] bool removeCurrentImage)
+        // ZMODYFIKOWANO: Nazwa parametru IFormFile zmieniona na ImageFile (tak jak w modelu)
+        public async Task<IActionResult> Edit(int id, [Bind("Id,Brand,Model,VIN,RegistrationNumber,Year,CustomerId")] Vehicle vehicle, [FromForm] IFormFile? ImageFile, [FromForm] bool removeCurrentImage) // ZMIANA
         {
             if (id != vehicle.Id)
             {
@@ -168,7 +170,7 @@ namespace CarWorkshopManagementSystem.Controllers
             {
                 try
                 {
-                    await _vehicleService.UpdateVehicleAsync(vehicle, newImageFile, removeCurrentImage);
+                    await _vehicleService.UpdateVehicleAsync(vehicle, ImageFile, removeCurrentImage); // ZMIANA: Przekazujemy ImageFile
                     _logger.LogInformation("Zaktualizowano pojazd: {Brand} {Model} (ID: {VehicleId}).", vehicle.Brand, vehicle.Model, vehicle.Id);
                     TempData["SuccessMessage"] = "Pojazd został pomyślnie zaktualizowany.";
                     return RedirectToAction(nameof(Index));
@@ -184,12 +186,9 @@ namespace CarWorkshopManagementSystem.Controllers
                     _logger.LogWarning(ex, "Konflikt współbieżności podczas edycji pojazdu ID {VehicleId}.", id);
                     TempData["ErrorMessage"] = "Błąd: Dane pojazdu zostały zmienione przez innego użytkownika. Spróbuj ponownie.";
 
-                    // W przypadku konfliktu, załaduj świeże dane z bazy i zwróć je do widoku,
-                    // aby użytkownik mógł zobaczyć aktualny stan i podjąć decyzję.
                     var freshVehicle = await _vehicleService.GetVehicleByIdAsync(id);
-                    modelToReturn = freshVehicle ?? vehicle; // Jeśli freshVehicle to null, użyj pierwotnego vehicle
+                    modelToReturn = freshVehicle ?? vehicle;
 
-                    // Załaduj klientów dla dropdowna w widoku
                     customers = await _customerService.GetAllAsync();
                     ViewBag.Customers = new SelectList(customers, "Id", "FullName", modelToReturn?.CustomerId);
                     return View(modelToReturn);
@@ -207,10 +206,9 @@ namespace CarWorkshopManagementSystem.Controllers
                 TempData["ErrorMessage"] = "Nie udało się zaktualizować pojazdu. Sprawdź poprawność danych.";
             }
 
-            // Ta linia zostanie wykonana, jeśli ModelState.IsValid jest false lub wystąpi inny błąd (poza DbUpdateConcurrencyException)
-            customers = await _customerService.GetAllAsync(); // Przypisanie, nie deklaracja
+            customers = await _customerService.GetAllAsync();
             ViewBag.Customers = new SelectList(customers, "Id", "FullName", modelToReturn.CustomerId);
-            return View(modelToReturn); // Zwróć model, który był przekazany lub zaktualizowany w przypadku błędu walidacji/ogólnego
+            return View(modelToReturn);
         }
 
         // GET: Vehicles/Delete/{id}
