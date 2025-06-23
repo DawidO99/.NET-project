@@ -1,0 +1,49 @@
+﻿@model CarWorkshopManagementSystem.Models.ViewModels.EditUserRolesViewModel
+
+@{
+    ViewData["Title"] = "Edytuj role: " + Model.UserName;
+}
+
+<h1>Edytuj role dla @(Model.UserFullName ?? Model.UserName)</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="EditRoles" method="post">
+            @Html.AntiForgeryToken() @* WAŻNE DLA BEZPIECZEŃSTWA *@
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="UserId" /> @* Przekazujemy ID użytkownika *@
+            <input type="hidden" asp-for="UserName" /> @* Przekazujemy UserName (np. dla logowania) *@
+            <input type="hidden" asp-for="UserFullName" /> @* DODANO: Ukryte pole dla UserFullName *@
+
+            <div class="form-group mb-3">
+                <label class="control-label">Dostępne role:</label>
+                @foreach (var role in Model.AllRoles)
+                {
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox"
+                               name="SelectedRoles"
+                               value="@role"
+                               @(Model.UserCurrentRoles.Contains(role) ? "checked" : "")
+                               id="@("role_" + role.Replace(" ", "_"))" /> @* Dynamically generated ID for label *@
+                        <label class="form-check-label" for="@("role_" + role.Replace(" ", "_"))">
+                            @role
+                        </label>
+                    </div>
+                }
+                <span asp-validation-for="SelectedRoles" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mt-3">
+                <input type="submit" value="Zapisz zmiany" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Powrót do listy użytkowników</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

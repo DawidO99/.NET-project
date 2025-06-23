@@ -1,0 +1,43 @@
+﻿@model IEnumerable<CarWorkshopManagementSystem.Models.ViewModels.UserWithRolesViewModel> // Zmieniono model na ViewModel
+
+@{
+    ViewData["Title"] = "Zarządzanie użytkownikami";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p>
+    @* Możesz dodać link do rejestracji nowych użytkowników, jeśli nie ma go w _LoginPartial *@
+    @* <a asp-area="Identity" asp-page="/Account/Register" class="btn btn-primary">Dodaj nowego użytkownika</a> *@
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Nazwa użytkownika</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Akcje</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.User.UserName</td>
+                <td>@item.User.Email</td>
+                <td>@string.Join(", ", item.Roles)</td>
+                <td>
+                    @* Link do edycji ról - implementacja w następnym kroku *@
+                    <a asp-action="EditRoles" asp-route-userId="@item.User.Id" class="btn btn-sm btn-warning">Edytuj role</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
