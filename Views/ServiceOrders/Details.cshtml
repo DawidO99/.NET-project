@@ -1,7 +1,7 @@
 ﻿@model CarWorkshopManagementSystem.Models.ServiceOrder
 @using System.Linq // Dodaj ten using dla .Any()
-@using static CarWorkshopManagementSystem.Services.EnumExtensions // DODANO: Aby używać GetDisplayName()
-@inject Microsoft.AspNetCore.Identity.UserManager<CarWorkshopManagementSystem.Models.AppUser> UserManager // DODANO: Potrzebne do sprawdzenia ról
+@using static CarWorkshopManagementSystem.Services.EnumExtensions 
+@inject Microsoft.AspNetCore.Identity.UserManager<CarWorkshopManagementSystem.Models.AppUser> UserManager 
 
 @{
     ViewData["Title"] = "Szczegóły zlecenia #" + Model.Id;

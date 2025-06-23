@@ -1,7 +1,7 @@
 ﻿@model IEnumerable<CarWorkshopManagementSystem.Models.ServiceOrder>
 @using CarWorkshopManagementSystem.Models
-@using static CarWorkshopManagementSystem.Services.EnumExtensions // DODANO: Aby używać GetDisplayName()
-@inject Microsoft.AspNetCore.Identity.UserManager<AppUser> UserManager // DODANO: Potrzebne do sprawdzenia ról
+@using static CarWorkshopManagementSystem.Services.EnumExtensions 
+@inject Microsoft.AspNetCore.Identity.UserManager<AppUser> UserManager 
 
 @{
     ViewData["Title"] = "Zlecenia serwisowe";
