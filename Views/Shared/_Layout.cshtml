@@ -41,6 +41,13 @@
                                 <a class="nav-link text-dark" asp-area="" asp-controller="Admin" asp-action="Index">Zarządzaj użytkownikami</a>
                             </li>
                         }
+                        @* DODANO: Link do Raportów, widoczny dla Admin/Recepcjonista *@
+                        @if (User.Identity?.IsAuthenticated == true && (User.IsInRole("Admin") || User.IsInRole("Recepcjonista")))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Reports" asp-action="Index">Raporty</a>
+                            </li>
+                        }
                     </ul>
 
                     <partial name="_LoginPartial" />

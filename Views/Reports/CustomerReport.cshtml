@@ -1,0 +1,51 @@
+﻿@* Views/Reports/CustomerReport.cshtml *@
+@using Microsoft.AspNetCore.Mvc.Rendering
+@using CarWorkshopManagementSystem.Models.ViewModels
+
+@{
+    ViewData["Title"] = "Raport napraw klienta";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@* Wyświetlanie komunikatów z TempData *@
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="GenerateCustomerReport" method="post">
+            @Html.AntiForgeryToken()
+            <div class="form-group mb-3">
+                <label for="customerId" class="control-label">Wybierz klienta</label>
+                <select name="customerId" class="form-control" asp-items="ViewBag.Customers">
+                    <option value="">-- Wybierz klienta --</option>
+                </select>
+                <span class="text-danger"></span> @* Możesz dodać asp-validation-for, jeśli masz ViewModel dla parametrów raportu *@
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Generuj raport PDF" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Powrót do raportów</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

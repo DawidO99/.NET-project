@@ -1,0 +1,57 @@
+﻿@* Views/Reports/MonthlyReport.cshtml *@
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Miesięczny raport napraw";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+@* Wyświetlanie komunikatów z TempData *@
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<hr />
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="GenerateMonthlyReport" method="post">
+            @Html.AntiForgeryToken()
+            <div class="form-group mb-3">
+                <label for="month" class="control-label">Miesiąc</label>
+                <select name="month" class="form-control" asp-items="ViewBag.Months">
+                    <option value="">-- Wybierz miesiąc --</option>
+                </select>
+                <span class="text-danger"></span>
+            </div>
+            <div class="form-group mb-3">
+                <label for="year" class="control-label">Rok</label>
+                <select name="year" class="form-control" asp-items="ViewBag.Years">
+                    <option value="">-- Wybierz rok --</option>
+                </select>
+                <span class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Generuj raport PDF" class="btn btn-primary" />
+                <a asp-action="Index" class="btn btn-secondary">Powrót do raportów</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

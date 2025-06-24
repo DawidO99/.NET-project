@@ -1,0 +1,29 @@
+﻿@* Views/Reports/Index.cshtml *@
+@{
+    ViewData["Title"] = "Raporty";
+}
+
+<h1>@ViewData["Title"]</h1>
+
+<p class="lead">Wybierz rodzaj raportu, który chcesz wygenerować:</p>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Raport napraw klienta</h5>
+                <p class="card-text">Wygeneruj szczegółowy raport wszystkich napraw wykonanych dla wybranego klienta.</p>
+                <a asp-action="CustomerReport" class="btn btn-primary">Przejdź do raportu klienta</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h5 class="card-title">Miesięczny raport napraw</h5>
+                <p class="card-text">Stwórz podsumowanie wszystkich zleceń serwisowych wykonanych w wybranym miesiącu.</p>
+                <a asp-action="MonthlyReport" class="btn btn-primary">Przejdź do raportu miesięcznego</a>
+            </div>
+        </div>
+    </div>
+</div>

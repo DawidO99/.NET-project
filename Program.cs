@@ -4,7 +4,7 @@ using CarWorkshopManagementSystem.Services;
 using CarWorkshopManagementSystem.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection; // Upewnij się, że ten using jest
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using Microsoft.Extensions.Logging;
 
@@ -53,6 +53,7 @@ namespace CarWorkshopManagementSystem
                 builder.Services.AddScoped<IServiceTaskService, ServiceTaskService>();
                 builder.Services.AddScoped<ICommentService, CommentService>();
                 builder.Services.AddScoped<IPartService, PartService>();
+                builder.Services.AddScoped<IReportService, ReportService>();
 
                 // Rejestracja BackgroundService
                 builder.Services.AddHostedService<OpenOrderReportBackgroundService>(); // DODANO: Rejestracja usługi w tle
