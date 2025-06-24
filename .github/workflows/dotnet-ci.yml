@@ -1,27 +1,59 @@
-﻿name: .NET Core CI
+﻿# .github/workflows/dotnet-ci.yml
+
+name: .NET CI/CD
 
 on:
   push:
-    branches: [ master ] # Lub 'main' jeśli to Twoja główna gałąź
+    branches: [ "main", "develop" ] # Uruchamia workflow na push do gałęzi main i develop
   pull_request:
-    branches: [ master ] # Lub 'main'
+    branches: [ "main", "develop" ] # Uruchamia workflow na pull request do gałęzi main i develop
 
 jobs:
-  build:
-    runs-on: windows-latest # Użyj najnowszego Windowsa, bo często pracujesz na Windowsie i SQL Serverze
+  build-and-test:
+    runs-on: ubuntu-latest # Używamy najnowszej wersji Ubuntu
 
     steps:
     - uses: actions/checkout@v4 # Klonuje repozytorium
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v4 # Konfiguruje środowisko .NET
       with:
-        dotnet-version: 8.0.x # Upewnij się, że to odpowiada wersji .NET, której używasz (sprawdź w .csproj lub Program.cs)
+        dotnet-version: '8.0.x' # Określ wersję .NET, której używasz (np. 7.0.x lub 8.0.x)
+        # Opcjonalnie: Użyj cache dla pakietów NuGet, aby przyspieszyć build
+        # cache: true
+        # cache-dependency-path: '**/packages.lock.json' # Jeśli używasz PackageReference z LockFile
 
     - name: Restore dependencies
-      run: dotnet restore # Przywraca pakiety NuGet
+      run: dotnet restore # Przywraca zależności NuGet
 
     - name: Build
-      run: dotnet build --no-restore # Buduje projekt
+      run: dotnet build --no-restore # Buduje projekt, nie przywracając ponownie zależności
 
     - name: Test
-      run: dotnet test --no-build --verbosity normal # Uruchamia testy jednostkowe (jeśli są)
+      run: dotnet test --no-build --verbosity normal # Uruchamia testy jednostkowe, nie budując ponownie projektu
+
+  # Opcjonalna sekcja dla budowania i pushowania obrazu Docker
+  # Pamiętaj, że do tej sekcji będziesz potrzebował konfiguracji Dockerfile
+  # oraz skonfigurowania tajemnic (secrets) na GitHub (DOCKERHUB_USERNAME, DOCKERHUB_TOKEN)
+  # docker-build-and-push:
+  #   needs: build-and-test # Uruchom tylko jeśli build-and-test zakończy się sukcesem
+  #   runs-on: ubuntu-latest
+  #   # Warunek, aby ten job uruchamiał się tylko na push do gałęzi main (lub develop)
+  #   if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+
+  #   steps:
+  #     - name: Checkout repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Log in to Docker Hub
+  #       uses: docker/login-action@v3
+  #       with:
+  #         username: ${{ secrets.DOCKERHUB_USERNAME }}
+  #         password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+  #     - name: Build and push Docker image
+  #       uses: docker/build-push-action@v5
+  #       with:
+  #         context: . # Kontekst budowania - bieżący katalog
+  #         push: true
+  #         tags: ${{ secrets.DOCKERHUB_USERNAME }}/carworkshopmanagersystem:latest # Zmień nazwę obrazu na Twoją
+  #         file: ./Dockerfile # Ścieżka do Twojego Dockerfile

@@ -4,73 +4,79 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using CarWorkshopManagementSystem.Models;
 using CarWorkshopManagementSystem.Services;
-using Microsoft.EntityFrameworkCore; // Potrzebne dla DbUpdateConcurrencyException
+using Microsoft.EntityFrameworkCore;
+using CarWorkshopManagementSystem.DTOs;
+using CarWorkshopManagementSystem.Mappers;
 
 namespace CarWorkshopManagementSystem.Controllers
 {
     public class CustomerController : Controller
     {
-        private readonly ICustomerService _service;
+        private readonly ICustomerService _customerService;
+        private readonly CustomerMapper _customerMapper;
 
-        public CustomerController(ICustomerService service)
+        public CustomerController(ICustomerService customerService, CustomerMapper customerMapper)
         {
-            _service = service;
+            _customerService = customerService;
+            _customerMapper = customerMapper;
         }
 
-        // GET: /Customer
         public async Task<IActionResult> Index()
         {
-            var customers = await _service.GetAllAsync();
-            return View(customers);
+            var customers = await _customerService.GetAllAsync();
+            var customerDtos = _customerMapper.Map(customers);
+            return View(customerDtos);
         }
 
-        // GET: /Customer/Details/{id}
         public async Task<IActionResult> Details(int id)
         {
-            var customer = await _service.GetByIdAsync(id);
+            var customer = await _customerService.GetByIdAsync(id);
             if (customer == null)
             {
                 return NotFound();
             }
-            return View(customer);
+            var customerDto = _customerMapper.Map(customer);
+            return View(customerDto);
         }
 
-        // GET: /Customer/Create
         public IActionResult Create()
         {
-            return View();
+            return View(new CustomerCreateDto());
         }
 
-        // POST: /Customer/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create([Bind("FullName,PhoneNumber")] Customer customer)
+        public async Task<IActionResult> Create(CustomerCreateDto customerCreateDto)
         {
             if (ModelState.IsValid)
             {
-                await _service.AddAsync(customer);
+                var customer = _customerMapper.Map(customerCreateDto);
+                await _customerService.AddAsync(customer);
                 return RedirectToAction(nameof(Index));
             }
-            return View(customer);
+            return View(customerCreateDto);
         }
 
         // GET: /Customer/Edit/{id}
         public async Task<IActionResult> Edit(int id)
         {
-            var customer = await _service.GetByIdAsync(id);
+            var customer = await _customerService.GetByIdAsync(id);
             if (customer == null)
             {
                 return NotFound();
             }
-            return View(customer);
+            // ZMIENIONO: Używamy MapToUpdateDto
+            var customerUpdateDto = _customerMapper.MapToUpdateDto(customer); // Użycie nowej metody mapującej
+            return View(customerUpdateDto);
         }
 
         // POST: /Customer/Edit/{id}
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,FullName,PhoneNumber")] Customer customer)
+        // UWAGA: Teraz customerUpdateDto ma Id, więc można sprawdzić id != customerUpdateDto.Id
+        public async Task<IActionResult> Edit(int id, CustomerUpdateDto customerUpdateDto)
         {
-            if (id != customer.Id)
+            if (id != customerUpdateDto.Id) // Walidacja ID z URL vs ID z DTO
             {
                 return NotFound();
             }
@@ -79,11 +85,19 @@ namespace CarWorkshopManagementSystem.Controllers
             {
                 try
                 {
-                    await _service.UpdateAsync(customer);
+                    var existingCustomer = await _customerService.GetByIdAsync(id);
+                    if (existingCustomer == null)
+                    {
+                        return NotFound();
+                    }
+
+                    _customerMapper.Map(customerUpdateDto, existingCustomer);
+
+                    await _customerService.UpdateAsync(existingCustomer);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (await _service.GetByIdAsync(customer.Id) == null)
+                    if (await _customerService.GetByIdAsync(id) == null)
                     {
                         return NotFound();
                     }
@@ -92,15 +106,14 @@ namespace CarWorkshopManagementSystem.Controllers
                         throw;
                     }
                 }
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index)); // Przekierowanie do Index
             }
-            return View(customer);
+            return View(customerUpdateDto);
         }
 
-        // GET: /Customer/Delete/{id}
-        public async Task<IActionResult> Delete(int id) // <-- DODANA AKCJA GET DLA USUWANIA
+        public async Task<IActionResult> Delete(int id)
         {
-            var customer = await _service.GetByIdAsync(id);
+            var customer = await _customerService.GetByIdAsync(id);
             if (customer == null)
             {
                 return NotFound();
@@ -108,12 +121,11 @@ namespace CarWorkshopManagementSystem.Controllers
             return View(customer);
         }
 
-        // POST: /Customer/Delete/{id}
-        [HttpPost, ActionName("Delete")] // <-- DODANA AKCJA POST DLA USUWANIA
+        [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            await _service.DeleteAsync(id);
+            await _customerService.DeleteAsync(id);
             return RedirectToAction(nameof(Index));
         }
     }

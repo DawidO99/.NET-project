@@ -5,6 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using CarWorkshopManagementSystem.Data;
 using CarWorkshopManagementSystem.Models;
+// Usunieto CarWorkshopManagementSystem.DTOs, bo serwis pracuje na encjach
+// Nie potrzebujemy tutaj mappera CustomerMapper, bo mapowanie DTO -> encja dzieje się w kontrolerze
+// A encja -> DTO jest wykonywane tylko w kontrolerze dla Get, więc serwis nadal zwraca encję.
 
 namespace CarWorkshopManagementSystem.Services
 {
@@ -12,7 +15,7 @@ namespace CarWorkshopManagementSystem.Services
     {
         private readonly ApplicationDbContext _context;
 
-        public CustomerService(ApplicationDbContext context)
+        public CustomerService(ApplicationDbContext context) // Usunieto CustomerMapper z konstruktora
         {
             _context = context;
         }
@@ -39,7 +42,7 @@ namespace CarWorkshopManagementSystem.Services
             await _context.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(int id) // <-- DODANA IMPLEMENTACJA
+        public async Task DeleteAsync(int id)
         {
             var customer = await _context.Customers.FindAsync(id);
             if (customer != null)

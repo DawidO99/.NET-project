@@ -1,16 +1,16 @@
 ﻿// Program.cs
 using CarWorkshopManagementSystem.Data;
-using CarWorkshopManagementSystem.Services;
+using CarWorkshopManagementSystem.Mappers;
 using CarWorkshopManagementSystem.Models;
+using CarWorkshopManagementSystem.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System;
 using Microsoft.Extensions.Logging;
-
-using NLog.Web;
 using NLog;
 using NLog.Extensions.Logging;
+using NLog.Web;
+using System;
 
 namespace CarWorkshopManagementSystem
 {
@@ -55,6 +55,8 @@ namespace CarWorkshopManagementSystem
                 builder.Services.AddScoped<IPartService, PartService>();
                 builder.Services.AddScoped<IReportService, ReportService>();
                 builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
+
+                builder.Services.AddScoped<CustomerMapper>();
 
                 // Rejestracja BackgroundService
                 builder.Services.AddHostedService<OpenOrderReportBackgroundService>(); // DODANO: Rejestracja usługi w tle

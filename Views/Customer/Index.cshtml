@@ -1,5 +1,5 @@
-﻿@using CarWorkshopManagementSystem.Models
-@model List<Customer>
+﻿@using CarWorkshopManagementSystem.DTOs // Zmieniono na DTOs
+@model List<CustomerDto> // ZMIENIONO: Model to lista CustomerDto
 
 <h2>Lista klientów</h2>
 
@@ -12,6 +12,7 @@
         <tr>
             <th>Imię i nazwisko</th>
             <th>Telefon</th>
+            <th>Liczba pojazdów</th> @* DODANO: Kolumna dla liczby pojazdów *@
             <th>Akcje</th>
         </tr>
     </thead>
@@ -21,10 +22,11 @@
             <tr>
                 <td>@customer.FullName</td>
                 <td>@customer.PhoneNumber</td>
+                <td>@customer.NumberOfVehicles</td> @* DODANO: Wyświetlanie liczby pojazdów *@
                 <td>
                     <a asp-controller="Customer" asp-action="Details" asp-route-id="@customer.Id" class="btn btn-sm btn-info">Szczegóły</a> |
                     <a asp-controller="Customer" asp-action="Edit" asp-route-id="@customer.Id" class="btn btn-sm btn-warning">Edytuj</a> |
-                    <a asp-controller="Customer" asp-action="Delete" asp-route-id="@customer.Id" class="btn btn-sm btn-danger">Usuń</a> @* <-- DODANY LINK DO USUWANIA *@
+                    <a asp-controller="Customer" asp-action="Delete" asp-route-id="@customer.Id" class="btn btn-sm btn-danger">Usuń</a>
                 </td>
             </tr>
         }
