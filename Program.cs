@@ -54,6 +54,7 @@ namespace CarWorkshopManagementSystem
                 builder.Services.AddScoped<ICommentService, CommentService>();
                 builder.Services.AddScoped<IPartService, PartService>();
                 builder.Services.AddScoped<IReportService, ReportService>();
+                builder.Services.AddScoped<IEmailSenderService, EmailSenderService>();
 
                 // Rejestracja BackgroundService
                 builder.Services.AddHostedService<OpenOrderReportBackgroundService>(); // DODANO: Rejestracja usługi w tle
